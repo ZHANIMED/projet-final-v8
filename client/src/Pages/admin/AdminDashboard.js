@@ -1,5 +1,7 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchProducts } from "../../JS/redux/slices/productSlice";
 
 const panels = [
   {
@@ -50,8 +52,63 @@ const panels = [
 ];
 
 export default function AdminDashboard() {
+  const dispatch = useDispatch();
+  const { list: products } = useSelector((s) => s.products);
+
+  useEffect(() => {
+    dispatch(fetchProducts({}));
+  }, [dispatch]);
+
+  const lowStockProducts = products.filter((p) => (p.stock || 0) <= 5);
+
   return (
     <div className="container">
+      {/* Stock Alert Banner */}
+      {lowStockProducts.length > 0 && (
+        <div
+          style={{
+            background: "linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%)",
+            color: "white",
+            padding: "16px 24px",
+            borderRadius: "16px",
+            marginBottom: "24px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            boxShadow: "0 10px 20px rgba(255, 65, 108, 0.3)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <span style={{ fontSize: "24px" }}>⚠️</span>
+            <div>
+              <strong style={{ fontSize: "16px", display: "block" }}>Alerte Stock Bas</strong>
+              <span style={{ fontSize: "14px", opacity: 0.9 }}>
+                Il y a {lowStockProducts.length} produit(s) avec un stock critique.
+              </span>
+            </div>
+          </div>
+          <Link
+            to="/admin/products"
+            style={{
+              background: "rgba(255, 255, 255, 0.2)",
+              color: "white",
+              padding: "8px 16px",
+              borderRadius: "10px",
+              textDecoration: "none",
+              fontSize: "13px",
+              fontWeight: "bold",
+              backdropFilter: "blur(4px)",
+              border: "1px solid rgba(255, 255, 255, 0.3)",
+              transition: "background 0.2s",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255, 255, 255, 0.3)")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)")}
+          >
+            Gérer le stock
+          </Link>
+        </div>
+      )}
+
       {/* Header */}
       <div style={{ marginBottom: 36 }}>
         <h1
@@ -97,7 +154,7 @@ export default function AdminDashboard() {
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = "translateY(-6px) scale(1.02)";
-              e.currentTarget.style.boxShadow = p.shadow.replace("0.35", "0.50");
+              e.currentTarget.style.boxShadow = p.shadow.replace("0.2)", "0.4)");
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = "translateY(0) scale(1)";

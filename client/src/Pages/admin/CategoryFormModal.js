@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import api from "../../JS/api/axios";
+import ConfirmModal from "../../Components/ConfirmModal";
 
 export default function CategoryFormModal({ initial, onClose, onSaved }) {
   const isEdit = !!initial?._id;
@@ -8,6 +9,7 @@ export default function CategoryFormModal({ initial, onClose, onSaved }) {
   const [file, setFile] = useState(null);          // ✅ fichier upload
   const [preview, setPreview] = useState("");      // ✅ preview image
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
     setName(initial?.name || "");
@@ -51,7 +53,7 @@ export default function CategoryFormModal({ initial, onClose, onSaved }) {
     } catch (err) {
       console.error(err);
       const msg = err.response?.data?.message || "Erreur lors de l'enregistrement";
-      alert(msg);
+      setErrorMsg(msg);
     } finally {
       setLoading(false);
     }
@@ -147,6 +149,16 @@ export default function CategoryFormModal({ initial, onClose, onSaved }) {
           </div>
         </form>
       </div>
+
+      {errorMsg && (
+        <ConfirmModal
+          title="Erreur"
+          message={errorMsg}
+          onConfirm={() => setErrorMsg("")}
+          alertMode={true}
+          type="danger"
+        />
+      )}
     </div>
   );
 }

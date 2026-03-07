@@ -6,22 +6,33 @@ export default function ConfirmModal({
     message = "Êtes-vous sûr de vouloir effectuer cette action ?",
     onConfirm,
     onCancel,
-    confirmText = "Confirmer",
+    confirmText = "OK",
     cancelText = "Annuler",
-    danger = true
+    danger = false,
+    alertMode = false,
+    type = "warning" // warning, info, success, danger
 }) {
+    const getIcon = () => {
+        if (type === "success") return "✅";
+        if (type === "danger") return "❌";
+        if (type === "info") return "ℹ️";
+        return "⚠️";
+    };
+
     return (
-        <div className="confirmBackdrop" onClick={onCancel}>
+        <div className="confirmBackdrop" onClick={alertMode ? onConfirm : onCancel}>
             <div className="confirmModal" onClick={(e) => e.stopPropagation()}>
                 <div className="confirmHeader">
-                    <div className="confirmIcon">{danger ? "⚠️" : "❓"}</div>
+                    <div className="confirmIcon">{getIcon()}</div>
                     <h3 className="confirmTitle">{title}</h3>
                 </div>
                 <p className="confirmMessage">{message}</p>
                 <div className="confirmActions">
-                    <button className="confirmBtn cancel" onClick={onCancel}>
-                        {cancelText}
-                    </button>
+                    {!alertMode && (
+                        <button className="confirmBtn cancel" onClick={onCancel}>
+                            {cancelText}
+                        </button>
+                    )}
                     <button className={`confirmBtn ${danger ? 'danger' : 'primary'}`} onClick={onConfirm}>
                         {confirmText}
                     </button>

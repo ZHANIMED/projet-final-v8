@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import api from "../../JS/api/axios";
+import ConfirmModal from "../../Components/ConfirmModal";
 
 export default function ProductFormModal({ initial, categories = [], onClose, onSaved }) {
   const isEdit = !!initial?._id;
@@ -13,6 +14,7 @@ export default function ProductFormModal({ initial, categories = [], onClose, on
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
     setTitle(initial?.title || "");
@@ -68,7 +70,7 @@ export default function ProductFormModal({ initial, categories = [], onClose, on
     } catch (err) {
       console.error(err);
       const msg = err.response?.data?.message || "Erreur lors de l'enregistrement";
-      alert(msg);
+      setErrorMsg(msg);
     } finally {
       setLoading(false);
     }

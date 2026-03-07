@@ -10,8 +10,7 @@ const app = express();
 
 app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
 app.use(express.json({ limit: "5mb" }));
-
-// static uploads removed
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.get("/", (req, res) => res.send("API OK ✅"));
 
@@ -20,6 +19,7 @@ app.use("/api/categories", require("./routes/category.routes"));
 app.use("/api/products", require("./routes/product.routes"));
 app.use("/api/users", require("./routes/user.routes"));
 app.use("/api/orders", require("./routes/order.routes"));
+app.use("/api/notifications", require("./routes/notification.routes"));
 
 app.use(errorHandler);
 

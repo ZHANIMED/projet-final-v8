@@ -17,7 +17,11 @@ export default function Login() {
     const res = await dispatch(login({ email, password }));
     if (res.meta.requestStatus === "fulfilled") {
       toast.success("✅ Connexion réussie !", { autoClose: 2000 });
-      navigate("/");
+      if (res.payload.user?.isAdmin) {
+        navigate("/admin");
+      } else {
+        navigate("/");
+      }
     } else {
       toast.error(`❌ ${res.payload || "Identifiants incorrects"}`);
     }

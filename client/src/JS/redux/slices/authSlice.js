@@ -22,6 +22,15 @@ export const register = createAsyncThunk("auth/register", async (payload, thunkA
   }
 });
 
+export const getMe = createAsyncThunk("auth/getMe", async (_, thunkAPI) => {
+  try {
+    const { data } = await api.get("/auth/me");
+    return data;
+  } catch (e) {
+    return thunkAPI.rejectWithValue(e.response?.data?.message || "Auth error");
+  }
+});
+
 export const updateProfile = createAsyncThunk("auth/updateProfile", async (payload, thunkAPI) => {
   try {
     const { data } = await api.put("/users/profile", payload, {
@@ -81,6 +90,21 @@ const authSlice = createSlice({
       .addCase(register.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+      .addCase(getMe.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(getMe.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = action.payload.user;
+        localStorage.setItem("user", JSON.stringify(action.payload.user));
+      })
+      .addCase(getMe.rejected, (state) => {
+        state.loading = false;
+        state.token = null;
+        state.user = null;
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
       })
 
       .addCase(updateProfile.pending, (state) => {

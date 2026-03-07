@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { updateProfile } from "../JS/redux/slices/authSlice";
+import ConfirmModal from "../Components/ConfirmModal";
 
 export default function Profile() {
   const dispatch = useDispatch();
@@ -13,8 +14,16 @@ export default function Profile() {
 
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(user?.photo || "");
+  const [errorMsg, setErrorMsg] = useState("");
 
-  const fallbackAvatar = useMemo(() => "https://i.pravatar.cc/160?img=12", []);
+  const fallbackAvatar = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+
+  const getUserPhoto = (photo) => {
+    if (!photo) return fallbackAvatar;
+    if (photo.startsWith("http")) return photo;
+    if (photo.startsWith("blob:")) return photo;
+    return `/${photo}`;
+  };
 
   // ✅ si user change (reload/login), on resync
   useEffect(() => {
@@ -39,11 +48,11 @@ export default function Profile() {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      alert("Veuillez choisir une image (png, jpg, jpeg, webp).");
+      setErrorMsg("Veuillez choisir une image (png, jpg, jpeg, webp).");
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
-      alert("Image trop grande. Max 2MB.");
+      setErrorMsg("L'image est trop grande. La taille maximale est de 2Mo.");
       return;
     }
 
@@ -83,7 +92,7 @@ export default function Profile() {
       await dispatch(updateProfile(fd)).unwrap();
       setEditing(false);
     } catch (error) {
-      alert("Erreur lors de la mise à jour : " + error);
+      setErrorMsg("Erreur lors de la mise à jour : " + error);
     }
   };
 
@@ -104,8 +113,12 @@ export default function Profile() {
           <div className="avatarWrap">
             <img
               className="avatar"
-              src={avatarPreview || user?.photo || fallbackAvatar}
+              src={getUserPhoto(avatarPreview || user?.photo)}
               alt={user?.name || "profil"}
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = fallbackAvatar;
+              }}
             />
 
             {editing && (
@@ -211,6 +224,16 @@ export default function Profile() {
           </div>
         </div>
       </section>
+
+      {errorMsg && (
+        <ConfirmModal
+          title="Attention"
+          message={errorMsg}
+          onConfirm={() => setErrorMsg("")}
+          alertMode={true}
+          type="warning"
+        />
+      )}
     </div>
   );
 }

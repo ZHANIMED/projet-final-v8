@@ -1,8 +1,11 @@
+import React, { useEffect } from "react";
 import "./App.css";
 import "react-toastify/dist/ReactToastify.css";
 import { Routes, Route } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import Navbar from "./Components/Navbar";
+import { useDispatch } from "react-redux";
+import { getMe } from "./JS/redux/slices/authSlice";
 
 import Home from "./Pages/Home";
 import Login from "./Pages/Login";
@@ -24,6 +27,14 @@ import AdminStats from "./Pages/admin/AdminStats";
 import AdminUsers from "./Pages/admin/AdminUsers";
 
 function App() {
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    if (localStorage.getItem("token")) {
+      dispatch(getMe());
+    }
+  }, [dispatch]);
+
   return (
     <>
       <Navbar />

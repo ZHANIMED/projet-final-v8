@@ -13,7 +13,7 @@ export default function CategoryPage() {
   const dispatch = useDispatch();
 
   const categories = useSelector((s) => s.categories.list);
-  const products = useSelector((s) => s.products.list);
+  const { list: products, loading } = useSelector((s) => s.products);
 
   useEffect(() => {
     dispatch(fetchCategories());
@@ -41,11 +41,24 @@ export default function CategoryPage() {
     <div className="container">
       <h1>{cat?.name || "Catégorie"}</h1>
 
-      <div className="grid4">
-        {products.map((p) => (
-          <ProductCard key={p._id} p={p} onAdd={onAdd} />
-        ))}
-      </div>
+      {loading ? (
+        <div className="skeletonGrid">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="skeletonCard" style={{ height: 350, borderRadius: 20, background: '#f5f5f5' }} />
+          ))}
+        </div>
+      ) : products.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '50px 20px', background: '#f9f9f9', borderRadius: 20 }}>
+          <p style={{ fontSize: '1.2rem', color: '#666' }}>Bientôt disponible ! ✨</p>
+          <p style={{ color: '#999' }}>Nous préparons de nouveaux articles pour cette catégorie.</p>
+        </div>
+      ) : (
+        <div className="grid4">
+          {products.map((p) => (
+            <ProductCard key={p._id} p={p} onAdd={onAdd} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

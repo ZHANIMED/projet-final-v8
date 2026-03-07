@@ -5,6 +5,7 @@ const {
   sendAdminNewUserAlert,
   sendAdminLoginAlert,
 } = require("../config/mailer");
+const Notification = require("../models/Notification");
 
 function signToken(user) {
   return jwt.sign(
@@ -25,11 +26,25 @@ exports.register = async (req, res, next) => {
 
     // Emails (non-bloquants) - catch errors just in case
     sendWelcomeEmail(user).catch(e => console.error("Welcome email error:", e));
-    sendAdminNewUserAlert(user).catch(e => console.error("Admin user alert error:", e));
+
+    // Notification admin au lieu de mail
+    await Notification.create({
+      message: `Nouvel utilisateur inscrit : ${user.name}`,
+      type: "register",
+      userId: user._id
+    }).catch(e => console.error("Notification error:", e));
 
     res.status(201).json({
       token,
-      user: { id: user._id, name: user.name, email: user.email, isAdmin: user.isAdmin },
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        isAdmin: user.isAdmin,
+        photo: user.photo,
+        phone: user.phone,
+        address: user.address,
+      },
     });
   } catch (err) {
     next(err);
@@ -47,12 +62,24 @@ exports.login = async (req, res, next) => {
 
     const token = signToken(user);
 
-    // Alerte connexion admin (non-bloquante)
-    sendAdminLoginAlert(user).catch(e => console.error("Admin login alert error:", e));
+    // Alerte connexion admin (Notification au lieu de mail)
+    await Notification.create({
+      message: `Connexion de l'utilisateur : ${user.name}`,
+      type: "login",
+      userId: user._id
+    }).catch(e => console.error("Notification error:", e));
 
     res.json({
       token,
-      user: { id: user._id, name: user.name, email: user.email, isAdmin: user.isAdmin },
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        isAdmin: user.isAdmin,
+        photo: user.photo,
+        phone: user.phone,
+        address: user.address,
+      },
     });
   } catch (err) {
     next(err);
@@ -62,7 +89,19 @@ exports.login = async (req, res, next) => {
 exports.me = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
-    res.json({ user });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.json({
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        isAdmin: user.isAdmin,
+        photo: user.photo,
+        phone: user.phone,
+        address: user.address,
+      },
+    });
   } catch (err) {
     next(err);
   }

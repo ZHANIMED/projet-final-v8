@@ -4,6 +4,7 @@ import "./Navbar.css";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../JS/redux/slices/authSlice";
 import logo from "../assets/MYECODECO.png";
+import NotificationBell from "./NotificationBell";
 
 export default function Navbar() {
   const { user } = useSelector((s) => s.auth);
@@ -15,6 +16,15 @@ export default function Navbar() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  const fallbackAvatar = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+
+  const getUserPhoto = (photo) => {
+    if (!photo) return null;
+    if (photo.startsWith("http")) return photo;
+    if (photo.startsWith("blob:")) return photo;
+    return `/${photo}`;
+  };
+
   const onLogout = () => {
     dispatch(logout());
     navigate("/login");
@@ -23,7 +33,7 @@ export default function Navbar() {
   return (
     <header className="nav">
       <Link className="brand" to="/">
-        <img src={logo} alt="MYECODECO" className="logo" />
+        <img src={logo} alt="My Ecodeco" className="logo" />
       </Link>
 
       <nav className="links">
@@ -36,18 +46,24 @@ export default function Navbar() {
         {!user ? (
           <NavLink to="/login" className="iconBtn">👤</NavLink>
         ) : (
-          <NavLink to="/profile" className="iconBtn" style={{ padding: 0, overflow: "hidden" }}>
-            {user.photo ? (
+          <NavLink to="/profile" className="iconBtn userPhotoBtn" style={{ padding: 0, overflow: "hidden" }}>
+            {getUserPhoto(user?.photo) ? (
               <img
-                src={user.photo}
+                src={getUserPhoto(user.photo)}
                 alt={user.name}
                 style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = fallbackAvatar;
+                }}
               />
             ) : (
-              "👤"
+              <span className="fallbackIcon">👤</span>
             )}
           </NavLink>
         )}
+
+        {user?.isAdmin && <NotificationBell />}
 
         <NavLink to="/cart" className="iconBtn">
           🛒 <span className="badge">{cartCount}</span>

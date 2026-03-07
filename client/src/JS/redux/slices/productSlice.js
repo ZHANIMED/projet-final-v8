@@ -43,6 +43,7 @@ const slice = createSlice({
       .addCase(fetchProducts.pending, (state) => {
         state.loading = true;
         state.error = null;
+        state.list = []; // ✅ On vide la liste au début du fetch pour éviter le "flash" d'anciens produits
       })
       .addCase(fetchProducts.fulfilled, (state, action) => {
         state.loading = false;

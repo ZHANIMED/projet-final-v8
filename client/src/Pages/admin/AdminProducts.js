@@ -9,7 +9,7 @@ import { toast } from "react-toastify";
 
 export default function AdminProducts() {
   const dispatch = useDispatch();
-  const products = useSelector((s) => s.products.list);
+  const { list: products, loading } = useSelector((s) => s.products);
   const categories = useSelector((s) => s.categories.list);
 
   const [open, setOpen] = useState(false);
@@ -54,36 +54,44 @@ export default function AdminProducts() {
         </button>
       </div>
 
-      <div className="grid4">
-        {products.map((p) => (
-          <div key={p._id} className="card">
-            <img
-              className="cardImg"
-              src={p.image || "https://via.placeholder.com/600x400"}
-              alt={p.title}
-            />
-            <div className="cardBody">
-              <div className="cardTitle">{p.title}</div>
-              <div className="muted">{formatTND(p.price)}</div>
+      {loading ? (
+        <div className="skeletonGrid">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+            <div key={i} className="skeletonCard" style={{ height: 200, borderRadius: 20, background: '#f5f5f5' }} />
+          ))}
+        </div>
+      ) : (
+        <div className="grid4">
+          {products.map((p) => (
+            <div key={p._id} className="card">
+              <img
+                className="cardImg"
+                src={p.image || "https://via.placeholder.com/600x400"}
+                alt={p.title}
+              />
+              <div className="cardBody">
+                <div className="cardTitle">{p.title}</div>
+                <div className="muted">{formatTND(p.price)}</div>
 
-              <div className="adminActions">
-                <button
-                  className="btn"
-                  onClick={() => {
-                    setEditing(p);
-                    setOpen(true);
-                  }}
-                >
-                  ✏️
-                </button>
-                <button className="btn" onClick={() => setConfirmDelete(p._id)}>
-                  🗑️
-                </button>
+                <div className="adminActions">
+                  <button
+                    className="btn"
+                    onClick={() => {
+                      setEditing(p);
+                      setOpen(true);
+                    }}
+                  >
+                    ✏️
+                  </button>
+                  <button className="btn" onClick={() => setConfirmDelete(p._id)}>
+                    🗑️
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {open && (
         <ProductFormModal

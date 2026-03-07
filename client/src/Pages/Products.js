@@ -99,7 +99,11 @@ export default function Products() {
       />
 
       {loading ? (
-        <p>Chargement...</p>
+        <div className="skeletonGrid">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+            <div key={i} className="skeletonCard" style={{ height: 350, borderRadius: 20, background: '#f5f5f5' }} />
+          ))}
+        </div>
       ) : (
         <div className="grid4">
           {filteredList.map((p) => (
