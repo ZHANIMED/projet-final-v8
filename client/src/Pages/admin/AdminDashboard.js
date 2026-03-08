@@ -49,6 +49,15 @@ const panels = [
     shadow: "0 10px 30px rgba(246, 211, 101, 0.2)",
     textColor: "#7a5a1f",
   },
+  {
+    to: "/admin/messages",
+    icon: "💬",
+    label: "Messages",
+    desc: "Contact & retours clients",
+    gradient: "linear-gradient(135deg, #c3f0ca 0%, #e0f4ff 100%)",
+    shadow: "0 10px 30px rgba(163, 230, 165, 0.25)",
+    textColor: "#1b4332",
+  },
 ];
 
 export default function AdminDashboard() {

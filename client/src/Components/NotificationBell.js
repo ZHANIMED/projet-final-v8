@@ -145,7 +145,7 @@ export default function NotificationBell() {
                                     }}
                                 >
                                     <div style={{ fontSize: "20px" }}>
-                                        {n.type === "login" ? "🔐" : n.type === "register" ? "👤" : "🔔"}
+                                        {n.type === "login" ? "🔐" : n.type === "register" ? "👤" : n.type === "review" ? "⭐" : n.type === "message" ? "💬" : n.type === "order" ? "📦" : "🔔"}
                                     </div>
                                     <div style={{ flex: 1 }}>
                                         <p style={{ margin: "0 0 4px", fontSize: "13px", fontWeight: n.read ? "500" : "700", color: "#333" }}>

@@ -9,6 +9,33 @@ const productSchema = new mongoose.Schema(
     image: { type: String, default: "" },
     category: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true },
     stock: { type: Number, default: 10, min: 0 },
+    // Avis / notes des clients
+    reviews: [
+      {
+        user: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
+        rating: {
+          type: Number,
+          required: true,
+          min: 0,
+          max: 10,
+        },
+        comment: {
+          type: String,
+          trim: true,
+          maxlength: 1000,
+        },
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+    averageRating: { type: Number, default: 0 },
+    ratingsCount: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

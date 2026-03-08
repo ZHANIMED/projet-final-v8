@@ -65,9 +65,91 @@ export default function Cart() {
       <h1>Panier</h1>
 
       {items.length === 0 ? (
-        <p>
-          Votre panier est vide. <Link to="/products">Voir les produits</Link>
-        </p>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+            textAlign: "center",
+            minHeight: "60vh",
+          }}
+        >
+          {/* Illustration SVG panier vide - taille réduite */}
+          <svg
+            width="200"
+            height="200"
+            viewBox="0 0 200 200"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            style={{ marginBottom: 16, opacity: 0.7 }}
+          >
+            {/* Panier */}
+            <path
+              d="M50 80 L50 160 L150 160 L150 80"
+              stroke="#c79b5b"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill="none"
+            />
+            <path
+              d="M40 80 L50 50 L150 50 L160 80"
+              stroke="#c79b5b"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill="none"
+            />
+            {/* Poignée */}
+            <path
+              d="M70 50 Q100 30 130 50"
+              stroke="#c79b5b"
+              strokeWidth="3"
+              strokeLinecap="round"
+              fill="none"
+            />
+            {/* Lignes décoratives (panier vide) */}
+            <circle cx="100" cy="120" r="2" fill="#c79b5b" opacity="0.4" />
+            <circle cx="100" cy="130" r="2" fill="#c79b5b" opacity="0.3" />
+            <circle cx="100" cy="140" r="2" fill="#c79b5b" opacity="0.2" />
+          </svg>
+
+          <h2
+            style={{
+              fontSize: 24,
+              fontWeight: 900,
+              margin: "0 0 8px",
+              color: "#111",
+            }}
+          >
+            Votre panier est vide
+          </h2>
+          <p
+            style={{
+              fontSize: 15,
+              color: "var(--muted)",
+              margin: "0 0 20px",
+              maxWidth: 400,
+            }}
+          >
+            Il semble que vous n'ayez pas encore ajouté de produits à votre
+            panier. Explorez notre catalogue et trouvez des articles qui vous
+            plaisent !
+          </p>
+          <Link
+            to="/products"
+            className="btnPrimary"
+            style={{
+              textDecoration: "none",
+              display: "inline-block",
+              marginTop: 0,
+            }}
+          >
+            Découvrir les produits
+          </Link>
+        </div>
       ) : (
         <>
           <div className="cartList">

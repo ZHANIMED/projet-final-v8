@@ -1,4 +1,5 @@
 const Category = require("../models/Category");
+const Product = require("../models/Product");
 
 const slugify = (s = "") =>
   s.toLowerCase().trim().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
@@ -6,7 +7,26 @@ const slugify = (s = "") =>
 exports.getAll = async (req, res, next) => {
   try {
     const categories = await Category.find().sort({ createdAt: -1 });
-    res.json({ categories });
+    
+    // Pour chaque catégorie, récupérer quelques produits (3-4) pour afficher leurs images
+    const categoriesWithProducts = await Promise.all(
+      categories.map(async (cat) => {
+        const products = await Product.find({ category: cat._id })
+          .select("image title")
+          .limit(4)
+          .sort({ createdAt: -1 });
+        
+        return {
+          ...cat.toObject(),
+          sampleProducts: products.map((p) => ({
+            image: p.image,
+            title: p.title,
+          })),
+        };
+      })
+    );
+    
+    res.json({ categories: categoriesWithProducts });
   } catch (err) {
     next(err);
   }

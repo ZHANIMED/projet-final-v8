@@ -11,4 +11,7 @@ router.post("/", isAuth, isAdmin, uploadProduct.single("image"), ctrl.create);
 router.put("/:id", isAuth, isAdmin, uploadProduct.single("image"), ctrl.update);
 router.delete("/:id", isAuth, isAdmin, ctrl.remove);
 
+// Avis produit
+router.post("/:slug/reviews", isAuth, ctrl.addReview);
+
 module.exports = router;

@@ -6,6 +6,10 @@ exports.getNotifications = async (req, res, next) => {
             .populate("userId", "name email photo")
             .sort({ createdAt: -1 })
             .limit(50);
+        
+        // Log pour debug (à retirer en production si nécessaire)
+        console.log(`[Notifications] Récupération de ${notifications.length} notifications`);
+        
         res.json({ notifications });
     } catch (err) {
         next(err);

@@ -25,6 +25,7 @@ import AdminCategories from "./Pages/admin/AdminCategories";
 import AdminOrders from "./Pages/admin/AdminOrders";
 import AdminStats from "./Pages/admin/AdminStats";
 import AdminUsers from "./Pages/admin/AdminUsers";
+import AdminMessages from "./Pages/admin/AdminMessages";
 
 function App() {
   const dispatch = useDispatch();
@@ -77,6 +78,7 @@ function App() {
           <Route path="/admin/orders" element={<AdminOrders />} />
           <Route path="/admin/stats" element={<AdminStats />} />
           <Route path="/admin/users" element={<AdminUsers />} />
+          <Route path="/admin/messages" element={<AdminMessages />} />
 
           {/* 404 */}
           <Route path="*" element={<Error />} />

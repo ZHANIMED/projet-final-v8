@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { updateProfile } from "../JS/redux/slices/authSlice";
 import ConfirmModal from "../Components/ConfirmModal";
+import api from "../JS/api/axios";
+import { toast } from "react-toastify";
 
 export default function Profile() {
   const dispatch = useDispatch();
@@ -15,6 +17,8 @@ export default function Profile() {
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(user?.photo || "");
   const [errorMsg, setErrorMsg] = useState("");
+  const [adminMessage, setAdminMessage] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
 
   const fallbackAvatar = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
@@ -98,6 +102,25 @@ export default function Profile() {
 
   // ✅ valeur affichée dans la page :
   const displayName = editing ? name : user?.name;
+
+  const sendAdminMessage = async () => {
+    const content = adminMessage.trim();
+    if (!content) return;
+
+    try {
+      setSendingMessage(true);
+      await api.post("/messages", { content });
+      setAdminMessage("");
+      toast.success("Votre message a été envoyé à l'administrateur.");
+    } catch (error) {
+      const msg =
+        error?.response?.data?.message ||
+        "Erreur lors de l'envoi du message. Veuillez réessayer.";
+      toast.error(msg);
+    } finally {
+      setSendingMessage(false);
+    }
+  };
 
   return (
     <div className="container">
@@ -222,6 +245,42 @@ export default function Profile() {
             <span className="infoLabel">Rôle</span>
             <span className="infoValue">{user?.isAdmin ? "Admin" : "Client"}</span>
           </div>
+        </div>
+      </section>
+
+      {/* Message privé à l'admin */}
+      <section className="panel" style={{ marginTop: 24 }}>
+        <h2 className="sectionTitle">Contacter l'administrateur</h2>
+        <p className="sectionSub">
+          Envoyez un message privé à l'équipe. Il sera uniquement visible par
+          l'administrateur et déclenchera une notification.
+        </p>
+        <div className="field" style={{ marginTop: 10 }}>
+          <span className="fieldLabel">Votre message</span>
+          <textarea
+            rows={4}
+            value={adminMessage}
+            onChange={(e) => setAdminMessage(e.target.value)}
+            placeholder="Écrivez ici votre remarque, question ou demande spécifique..."
+            style={{ resize: "vertical" }}
+          />
+        </div>
+        <div
+          style={{
+            marginTop: 14,
+            display: "flex",
+            justifyContent: "flex-end",
+          }}
+        >
+          <button
+            type="button"
+            className="btnPrimary"
+            onClick={sendAdminMessage}
+            disabled={sendingMessage || !adminMessage.trim()}
+            style={{ marginTop: 0 }}
+          >
+            {sendingMessage ? "Envoi..." : "Envoyer le message"}
+          </button>
         </div>
       </section>
 

@@ -3,6 +3,7 @@ const router = express.Router();
 const Order = require("../models/Order");
 const Product = require("../models/Product");
 const User = require("../models/User");
+const Notification = require("../models/Notification");
 const isAuth = require("../middlewares/isAuth");
 const isAdmin = require("../middlewares/isAdmin");
 const maybeAuth = require("../middlewares/maybeAuth");
@@ -58,7 +59,7 @@ router.post("/", maybeAuth, async (req, res, next) => {
 
         await newOrder.save();
 
-        // 3. Récupérer les données utilisateur pour les emails
+        // 3. Récupérer les données utilisateur pour les emails et la notification
         let userDoc = null;
         if (req.user) {
             userDoc = await User.findById(req.user.id).select("name email");
@@ -68,17 +69,44 @@ router.post("/", maybeAuth, async (req, res, next) => {
             // On peut envoyer une alerte admin quand même sans user confirmation.
         }
 
-        // 4. Envoyer emails (non-bloquants)
-        if (userDoc) {
-            sendOrderConfirmation(userDoc, newOrder);
-            sendAdminOrderAlert(userDoc, newOrder);
-        } else {
-            // Alerte admin pour commande invité
-            const guestDoc = { name: newOrder.guestName || "Invité", email: "guest@example.com" };
-            sendAdminOrderAlert(guestDoc, newOrder);
+        // 4. Créer une notification pour l'admin lorsqu'une commande est validée
+        try {
+            const customerName = userDoc?.name || newOrder.guestName || "Un client";
+            const itemsCount = items.reduce((sum, item) => sum + item.qty, 0);
+            // Le total est un nombre, on le formate pour l'affichage
+            const totalValue = typeof total === "number" ? total.toFixed(3) : (typeof total === "string" ? total.replace(" TND", "").trim() : total);
+            
+            const notification = await Notification.create({
+                message: `Nouvelle commande de ${customerName}: ${itemsCount} article(s) pour ${totalValue} TND`,
+                type: "order",
+                userId: req.user ? req.user.id : null,
+            });
+            console.log("[Notification] ✅ Commande créée:", notification.message);
+            console.log("[Notification] Détails:", { customerName, itemsCount, totalValue, orderId: newOrder._id });
+        } catch (notifError) {
+            console.error("❌ Erreur création notification commande:", notifError);
+            console.error("❌ Détails erreur:", notifError.message, notifError.stack);
+            // Ne pas bloquer la réponse si la notification échoue
         }
 
-        // 5. Alerte stock = 0 si applicable
+        // 5. Envoyer emails (non-bloquants mais avec await pour voir les erreurs)
+        try {
+            if (userDoc) {
+                console.log("[Email] Envoi confirmation client et alerte admin...");
+                await sendOrderConfirmation(userDoc, newOrder).catch(e => console.error("❌ Email confirmation:", e.message));
+                await sendAdminOrderAlert(userDoc, newOrder).catch(e => console.error("❌ Email admin:", e.message));
+            } else {
+                // Alerte admin pour commande invité
+                const guestDoc = { name: newOrder.guestName || "Invité", email: "guest@example.com" };
+                console.log("[Email] Envoi alerte admin (invité)...");
+                await sendAdminOrderAlert(guestDoc, newOrder).catch(e => console.error("❌ Email admin invité:", e.message));
+            }
+        } catch (emailError) {
+            console.error("❌ Erreur générale emails:", emailError);
+            // Ne pas bloquer la réponse si les emails échouent
+        }
+
+        // 6. Alerte stock = 0 si applicable
         if (outOfStockProducts.length > 0) {
             sendAdminLowStockAlert(outOfStockProducts);
         }

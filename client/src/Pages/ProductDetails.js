@@ -1,21 +1,51 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { addToCart } from "../JS/redux/slices/cartSlice";
+import { fetchProductBySlug, clearCurrent } from "../JS/redux/slices/productSlice";
 import { toast } from "react-toastify";
+import api from "../JS/api/axios";
 
 export default function ProductDetails() {
   const { slug } = useParams();
   const dispatch = useDispatch();
 
-  const { list = [], loading } = useSelector((s) => s.products);
+  const { list = [], loading, current } = useSelector((s) => s.products);
+  const { user } = useSelector((s) => s.auth);
 
   const product = useMemo(
-    () => list.find((x) => x.slug === slug),
-    [list, slug]
+    () => current || list.find((x) => x.slug === slug),
+    [current, list, slug]
   );
 
   const [qty, setQty] = useState(1);
+  const [reviewText, setReviewText] = useState("");
+  const [rating, setRating] = useState(8);
+  const [sendingReview, setSendingReview] = useState(false);
+
+  useEffect(() => {
+    dispatch(fetchProductBySlug(slug));
+    return () => {
+      dispatch(clearCurrent());
+    };
+  }, [dispatch, slug]);
+
+  const Stars = ({ value }) => {
+    const safe = Math.max(0, Math.min(10, Number(value) || 0));
+    const percentage = (safe / 10) * 100;
+    const stars = "★★★★★";
+    return (
+      <div className="ratingStars" aria-label={`${safe.toFixed(1)}/10`}>
+        <div className="ratingStarsBg">{stars}</div>
+        <div
+          className="ratingStarsInner"
+          style={{ width: `${percentage}%` }}
+        >
+          {stars}
+        </div>
+      </div>
+    );
+  };
 
   const dec = () => setQty((q) => Math.max(1, q - 1));
   const inc = () => setQty((q) => q + 1);
@@ -41,6 +71,33 @@ export default function ProductDetails() {
     );
     setQty(1);
     toast.success("Produit ajouté au panier !");
+  };
+
+  const submitReview = async () => {
+    if (!user) {
+      toast.error("Vous devez être connecté pour laisser un avis.");
+      return;
+    }
+    if (!product) return;
+
+    try {
+      setSendingReview(true);
+      await api.post(`/products/${product.slug}/reviews`, {
+        rating,
+        comment: reviewText.trim(),
+      });
+      setReviewText("");
+      toast.success("Merci pour votre avis !");
+      // recharger le produit pour voir la nouvelle note
+      dispatch(fetchProductBySlug(slug));
+    } catch (error) {
+      const msg =
+        error?.response?.data?.message ||
+        "Erreur lors de l'envoi de l'avis. Veuillez réessayer.";
+      toast.error(msg);
+    } finally {
+      setSendingReview(false);
+    }
   };
 
   if (loading) return <div className="container"><p>Chargement...</p></div>;
@@ -100,6 +157,218 @@ export default function ProductDetails() {
           <div style={{ marginTop: 18 }}>
             <Link className="muted" to="/products">← Retour</Link>
           </div>
+        </div>
+      </div>
+
+      {/* Avis & notes */}
+      <div
+        style={{
+          marginTop: 32,
+          display: "grid",
+          gridTemplateColumns: "minmax(0, 2fr) minmax(0, 3fr)",
+          gap: 20,
+          alignItems: "flex-start",
+        }}
+      >
+        <div className="panel">
+          <h2 className="sectionTitle">Note du produit</h2>
+          <p className="sectionSub">
+            Donnez une note sur 10 et partagez votre expérience.
+          </p>
+
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 16,
+              marginTop: 10,
+            }}
+          >
+            <div>
+              <div
+                style={{
+                  fontSize: 32,
+                  fontWeight: 900,
+                }}
+              >
+                {(product.averageRating || 0).toFixed(1)}
+                <span
+                  style={{
+                    fontSize: 16,
+                    color: "var(--muted)",
+                    marginLeft: 4,
+                  }}
+                >
+                  /10
+                </span>
+              </div>
+              <div style={{ marginTop: 4 }}>
+                <Stars value={product.averageRating || 0} />
+              </div>
+              <div
+                style={{
+                  marginTop: 6,
+                  fontSize: 13,
+                  color: "var(--muted)",
+                }}
+              >
+                {product.ratingsCount || 0} avis
+              </div>
+            </div>
+          </div>
+
+          <div style={{ marginTop: 20 }}>
+            <div className="field">
+              <span className="fieldLabel">Votre note (sur 10)</span>
+              <input
+                type="range"
+                min="0"
+                max="10"
+                step="1"
+                value={rating}
+                onChange={(e) => setRating(Number(e.target.value) || 0)}
+              />
+              <div
+                style={{
+                  marginTop: 6,
+                  fontSize: 14,
+                  fontWeight: 700,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <span>
+                  Votre note :{" "}
+                  <b>
+                    {rating}
+                    /10
+                  </b>
+                </span>
+                <Stars value={rating} />
+              </div>
+            </div>
+
+            <div className="field" style={{ marginTop: 12 }}>
+              <span className="fieldLabel">Votre avis</span>
+              <textarea
+                rows={3}
+                value={reviewText}
+                onChange={(e) => setReviewText(e.target.value)}
+                placeholder="Partagez ce que vous avez aimé (ou moins aimé) de ce produit..."
+                style={{ resize: "vertical" }}
+              />
+            </div>
+
+            <div
+              style={{
+                marginTop: 14,
+                display: "flex",
+                justifyContent: "flex-end",
+              }}
+            >
+              <button
+                type="button"
+                className="btnPrimary"
+                style={{ marginTop: 0 }}
+                onClick={submitReview}
+                disabled={sendingReview}
+              >
+                {sendingReview ? "Envoi de votre avis..." : "Envoyer mon avis"}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="panel">
+          <h2 className="sectionTitle">Avis récents</h2>
+          {product.reviews && product.reviews.length > 0 ? (
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 12,
+                marginTop: 8,
+              }}
+            >
+              {product.reviews.slice(0, 5).map((r) => (
+                <div
+                  key={r._id || `${r.user?._id}-${r.createdAt}`}
+                  style={{
+                    borderRadius: 14,
+                    border: "1px solid var(--line)",
+                    padding: 12,
+                    background: "rgba(255,255,255,.9)",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 4,
+                      gap: 10,
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontWeight: 800,
+                        fontSize: 14,
+                      }}
+                    >
+                      {r.user?.name || "Client"}
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                      }}
+                    >
+                      <Stars value={r.rating || 0} />
+                      <span
+                        style={{
+                          fontSize: 12,
+                          color: "var(--muted)",
+                          fontWeight: 700,
+                        }}
+                      >
+                        {(r.rating || 0).toFixed(1)}/10
+                      </span>
+                    </div>
+                  </div>
+                  {r.comment && (
+                    <p
+                      style={{
+                        margin: "4px 0 6px",
+                        fontSize: 14,
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      {r.comment}
+                    </p>
+                  )}
+                  <span
+                    style={{
+                      fontSize: 11,
+                      color: "var(--muted)",
+                    }}
+                  >
+                    {r.createdAt &&
+                      new Date(r.createdAt).toLocaleDateString("fr-FR", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="sectionSub" style={{ marginTop: 8 }}>
+              Aucun avis pour le moment. Soyez le premier à donner votre avis !
+            </p>
+          )}
         </div>
       </div>
     </div>

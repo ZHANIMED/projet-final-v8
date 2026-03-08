@@ -2,6 +2,24 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 
+// Composant étoiles pour les cartes (version compacte)
+const Stars = ({ value }) => {
+  const safe = Math.max(0, Math.min(10, Number(value) || 0));
+  const percentage = (safe / 10) * 100;
+  const stars = "★★★★★";
+  return (
+    <div className="ratingStars" style={{ fontSize: 14 }} aria-label={`${safe.toFixed(1)}/10`}>
+      <div className="ratingStarsBg">{stars}</div>
+      <div
+        className="ratingStarsInner"
+        style={{ width: `${percentage}%` }}
+      >
+        {stars}
+      </div>
+    </div>
+  );
+};
+
 export default function ProductCard({ p, onAdd }) {
   const [qty, setQty] = useState(1);
 
@@ -40,6 +58,41 @@ export default function ProductCard({ p, onAdd }) {
           {(p?.description || "").slice(0, 60)}
           {(p?.description || "").length > 60 ? "..." : ""}
         </div>
+
+        {/* Note du produit */}
+        {p?.averageRating !== undefined && p?.averageRating > 0 && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              marginTop: 8,
+              marginBottom: 4,
+            }}
+          >
+            <Stars value={p.averageRating} />
+            <span
+              style={{
+                fontSize: 13,
+                fontWeight: 700,
+                color: "var(--muted)",
+              }}
+            >
+              {(p.averageRating || 0).toFixed(1)}/10
+            </span>
+            {p?.ratingsCount > 0 && (
+              <span
+                style={{
+                  fontSize: 11,
+                  color: "var(--muted)",
+                  marginLeft: 4,
+                }}
+              >
+                ({p.ratingsCount})
+              </span>
+            )}
+          </div>
+        )}
 
         <div className="cardRow">
           {/* ✅ Prix TND direct */}
