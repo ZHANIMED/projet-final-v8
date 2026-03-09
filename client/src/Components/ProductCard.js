@@ -24,7 +24,9 @@ export default function ProductCard({ p, onAdd }) {
   const [qty, setQty] = useState(1);
 
   // ✅ Prix déjà stocké en TND
-  const priceTND = Number(p?.price) || 0;
+  const originalPrice = Number(p?.price) || 0;
+  const promo = Number(p?.promoPercentage) || 0;
+  const priceTND = promo > 0 ? originalPrice - (originalPrice * promo / 100) : originalPrice;
 
   const dec = () => setQty((q) => Math.max(1, q - 1));
   const inc = () => setQty((q) => q + 1);
@@ -94,10 +96,22 @@ export default function ProductCard({ p, onAdd }) {
           </div>
         )}
 
-        <div className="cardRow">
+        <div className="cardRow" style={{ flexWrap: "wrap" }}>
           {/* ✅ Prix TND direct */}
-          <div>
-            <div className="cardPrice">{priceTND.toFixed(3)} TND</div>
+          <div style={{ flex: "1 1 auto", minWidth: "120px" }}>
+            {promo > 0 ? (
+              <>
+                <div style={{ textDecoration: "line-through", color: "var(--muted)", fontSize: 13 }}>
+                  {originalPrice.toFixed(3)} TND
+                </div>
+                <div className="cardPrice" style={{ color: "var(--accent)" }}>
+                  {priceTND.toFixed(3)} TND
+                  <span style={{ fontSize: 11, background: "var(--accent)", color: "white", padding: "2px 4px", borderRadius: 4, marginLeft: 6 }}>-{promo}%</span>
+                </div>
+              </>
+            ) : (
+              <div className="cardPrice">{priceTND.toFixed(3)} TND</div>
+            )}
             {p?.stock > 0 && (
               <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 4, fontWeight: 700 }}>
                 Stock: <span style={{ color: "#111" }}>{p.stock}</span>
@@ -105,29 +119,35 @@ export default function ProductCard({ p, onAdd }) {
             )}
           </div>
 
-          {p?.stock > 0 ? (
-            <>
-              {/* quantité */}
-              <div className="qtyWrap">
-                <button className="qtyBtn" onClick={dec} type="button" aria-label="Diminuer">-</button>
-                <span className="qtyVal">{qty}</span>
-                <button className="qtyBtn" onClick={inc} type="button" aria-label="Augmenter">+</button>
-              </div>
+          <div style={{ display: "flex", gap: "8px", alignItems: "center", marginTop: promo > 0 ? 0 : 0 }}>
+            {p?.stock > 0 ? (
+              <>
+                {/* quantité */}
+                <div className="qtyWrap" style={{ padding: "4px 6px" }}>
+                  <button className="qtyBtn" onClick={dec} type="button" aria-label="Diminuer">-</button>
+                  <span className="qtyVal">{qty}</span>
+                  <button className="qtyBtn" onClick={inc} type="button" aria-label="Augmenter">+</button>
+                </div>
 
-              {/* bouton panier */}
-              <button
-                className="cartBtn"
-                onClick={handleAdd}
-                type="button"
-                aria-label="Ajouter au panier"
-                title="Ajouter au panier"
-              >
-                🛒
-              </button>
-            </>
-          ) : (
-            <span style={{ color: '#e74c3c', fontWeight: 900, fontSize: 14 }}>Stock épuisé</span>
-          )}
+                {/* bouton panier */}
+                <button
+                  className="iconBtnCart"
+                  onClick={handleAdd}
+                  type="button"
+                  aria-label="Ajouter au panier"
+                  title="Ajouter au panier"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="9" cy="21" r="1"></circle>
+                    <circle cx="20" cy="21" r="1"></circle>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                  </svg>
+                </button>
+              </>
+            ) : (
+              <span style={{ color: '#e74c3c', fontWeight: 900, fontSize: 14 }}>Stock épuisé</span>
+            )}
+          </div>
         </div>
       </div>
     </div>

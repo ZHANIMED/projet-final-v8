@@ -43,7 +43,7 @@ exports.getOne = async (req, res, next) => {
 
 exports.create = async (req, res, next) => {
   try {
-    const { title, description = "", price, category, stock = 10 } = req.body;
+    const { title, description = "", price, category, stock = 10, promoPercentage = 0 } = req.body;
     const image = req.file ? req.file.path : (req.body.image || "");
     const slug = slugify(title);
 
@@ -58,6 +58,7 @@ exports.create = async (req, res, next) => {
       image,
       category,
       stock,
+      promoPercentage,
     });
 
     res.status(201).json({ product });
@@ -72,7 +73,7 @@ exports.create = async (req, res, next) => {
 exports.update = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { title, description, price, category, stock } = req.body;
+    const { title, description, price, category, stock, promoPercentage } = req.body;
 
     const update = {};
     if (title) {
@@ -89,6 +90,7 @@ exports.update = async (req, res, next) => {
     if (price !== undefined) update.price = price;
     if (category !== undefined) update.category = category;
     if (stock !== undefined) update.stock = stock;
+    if (promoPercentage !== undefined) update.promoPercentage = promoPercentage;
 
     const image = req.file ? req.file.path : req.body.image;
     if (image !== undefined) update.image = image;
@@ -181,7 +183,7 @@ exports.addReview = async (req, res, next) => {
       const userName = user?.name || "Un client";
       const ratingText = `${numericRating}/10`;
       const isNewReview = !existing;
-      
+
       const notification = await Notification.create({
         message: isNewReview
           ? `Nouvel avis sur "${product.title}": ${ratingText} par ${userName}`

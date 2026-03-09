@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import api from "../../JS/api/axios";
 import ConfirmModal from "../../Components/ConfirmModal";
+import { toast } from "react-toastify";
 
 export default function ProductFormModal({ initial, categories = [], onClose, onSaved }) {
   const isEdit = !!initial?._id;
@@ -11,10 +12,12 @@ export default function ProductFormModal({ initial, categories = [], onClose, on
   const [image, setImage] = useState(initial?.image || "");
   const [category, setCategory] = useState(initial?.category?._id || initial?.category || "");
   const [stock, setStock] = useState(initial?.stock ?? 0);
+  const [promoPercentage, setPromoPercentage] = useState(initial?.promoPercentage ?? 0);
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [aiGenerating, setAiGenerating] = useState(false);
 
   useEffect(() => {
     setTitle(initial?.title || "");
@@ -23,6 +26,7 @@ export default function ProductFormModal({ initial, categories = [], onClose, on
     setImage(initial?.image || "");
     setCategory(initial?.category?._id || initial?.category || "");
     setStock(initial?.stock ?? 0);
+    setPromoPercentage(initial?.promoPercentage ?? 0);
     setFile(null);
     setPreview(initial?.image || "");
   }, [initial]);
@@ -37,6 +41,33 @@ export default function ProductFormModal({ initial, categories = [], onClose, on
   const canSave = useMemo(() => {
     return title.trim() && String(price).trim() && category;
   }, [title, price, category]);
+
+  const generateDescriptionFromImage = async () => {
+    if (!file && !image && !preview) return;
+    setAiGenerating(true);
+    try {
+      const payload = new FormData();
+      if (file) {
+        payload.append("image", file);
+      } else {
+        payload.append("imageUrl", image || preview);
+      }
+
+      const { data } = await api.post("/ai/describe-image", payload, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+
+      if (data.description) {
+        setDescription(data.description);
+        toast.success("✨ Description IA générée !");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("❌ Erreur avec l'IA. Vérifiez que la clé API est configurée dans le backend.");
+    } finally {
+      setAiGenerating(false);
+    }
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -59,6 +90,7 @@ export default function ProductFormModal({ initial, categories = [], onClose, on
 
       fd.append("category", category);
       fd.append("stock", Number(stock) || 0);
+      fd.append("promoPercentage", Number(promoPercentage) || 0);
 
       const config = { headers: { "Content-Type": "multipart/form-data" } };
 
@@ -91,7 +123,24 @@ export default function ProductFormModal({ initial, categories = [], onClose, on
           </div>
 
           <div className="field fieldSpan2">
-            <label className="fieldLabel">Description</label>
+            <label className="fieldLabel" style={{ display: "flex", alignItems: "center" }}>
+              <span>Description</span>
+              {(file || preview || image) && (
+                <button
+                  type="button"
+                  onClick={generateDescriptionFromImage}
+                  disabled={aiGenerating}
+                  style={{
+                    marginLeft: 12, background: "linear-gradient(90deg, #A855F7, #EC4899)",
+                    color: "white", border: "none", borderRadius: 6, padding: "4px 8px",
+                    fontSize: 12, cursor: "pointer", fontWeight: "bold",
+                    opacity: aiGenerating ? 0.6 : 1
+                  }}
+                >
+                  {aiGenerating ? "✨ Génération..." : "✨ Générer via IA"}
+                </button>
+              )}
+            </label>
             <textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
           </div>
 
@@ -108,6 +157,11 @@ export default function ProductFormModal({ initial, categories = [], onClose, on
           <div className="field">
             <label className="fieldLabel">Stock</label>
             <input type="number" value={stock} onChange={(e) => setStock(e.target.value)} />
+          </div>
+
+          <div className="field">
+            <label className="fieldLabel">Remise Promo (%)</label>
+            <input type="number" min="0" max="100" value={promoPercentage} onChange={(e) => setPromoPercentage(e.target.value)} />
           </div>
 
           <div className="field fieldSpan2">

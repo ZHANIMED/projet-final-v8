@@ -17,6 +17,7 @@ export default function Products() {
   const [q, setQ] = useState("");
   const [minPrice, setMinPrice] = useState(""); // TND
   const [maxPrice, setMaxPrice] = useState(""); // TND
+  const [minRating, setMinRating] = useState(""); // Note sur 10
 
   useEffect(() => {
     dispatch(fetchCategories());
@@ -33,9 +34,11 @@ export default function Products() {
 
     const min = minPrice === "" ? null : Number(minPrice);
     const max = maxPrice === "" ? null : Number(maxPrice);
+    const ratingLimit = minRating === "" ? null : Number(minRating);
 
     return list.filter((p) => {
       const price = Number(p?.price) || 0; // ✅ TND
+      const rating = Number(p?.averageRating) || 0;
 
       const matchesQ =
         !qLower ||
@@ -44,19 +47,24 @@ export default function Products() {
 
       const matchesMin = min === null || (!Number.isNaN(min) && price >= min);
       const matchesMax = max === null || (!Number.isNaN(max) && price <= max);
+      const matchesRating = ratingLimit === null || (!Number.isNaN(ratingLimit) && rating >= ratingLimit);
 
-      return matchesQ && matchesMin && matchesMax;
+      return matchesQ && matchesMin && matchesMax && matchesRating;
     });
-  }, [list, q, minPrice, maxPrice]);
+  }, [list, q, minPrice, maxPrice, minRating]);
 
   // ✅ IMPORTANT: ProductCard appelle onAdd(p, qty)
-  const onAdd = (p, qty = 1) =>
+  const onAdd = (p, qty = 1) => {
+    const originalPrice = Number(p.price) || 0;
+    const promo = Number(p.promoPercentage) || 0;
+    const priceTND = promo > 0 ? originalPrice - (originalPrice * promo / 100) : originalPrice;
+
     dispatch(
       addToCart({
         product: {
           id: p._id,
           title: p.title,
-          price: p.price, // ✅ TND stocké
+          price: priceTND, // ✅ TND stocké (avec remise)
           image: p.image,
           slug: p.slug,
           stock: p.stock,
@@ -64,6 +72,7 @@ export default function Products() {
         qty,
       })
     );
+  };
 
   return (
     <div className="container">
@@ -97,6 +106,8 @@ export default function Products() {
         setMinPrice={setMinPrice}
         maxPrice={maxPrice}
         setMaxPrice={setMaxPrice}
+        minRating={minRating}
+        setMinRating={setMinRating}
       />
 
       {loading ? (

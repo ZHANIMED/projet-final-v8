@@ -61,7 +61,7 @@ export default function ProductDetails() {
         product: {
           id: product._id,
           title: product.title,
-          price: product.price, // ✅ TND
+          price: priceTND, // ✅ TND
           image: product.image,
           slug: product.slug,
           stock: product.stock, // On passe le stock au slice pour validation cumulative
@@ -111,7 +111,9 @@ export default function ProductDetails() {
     );
   }
 
-  const priceTND = Number(product.price) || 0;
+  const originalPrice = Number(product.price) || 0;
+  const promo = Number(product.promoPercentage) || 0;
+  const priceTND = promo > 0 ? originalPrice - (originalPrice * promo / 100) : originalPrice;
 
   return (
     <div className="container">
@@ -120,6 +122,7 @@ export default function ProductDetails() {
           className="detailsImg"
           src={product.image || "https://via.placeholder.com/900x650"}
           alt={product.title || "Produit"}
+          style={{ objectFit: "contain", backgroundColor: "#f7f7f5" }}
         />
 
         <div className="panel">
@@ -128,9 +131,21 @@ export default function ProductDetails() {
             {product.description || "—"}
           </p>
 
-          <div style={{ marginTop: 14, fontWeight: 900, fontSize: 22, color: "var(--accent)" }}>
-            {priceTND.toFixed(3)} TND
-          </div>
+          {promo > 0 ? (
+            <div style={{ marginTop: 14 }}>
+              <div style={{ textDecoration: "line-through", color: "var(--muted)", fontSize: 16 }}>
+                {originalPrice.toFixed(3)} TND
+              </div>
+              <div style={{ fontWeight: 900, fontSize: 22, color: "var(--accent)", display: "flex", alignItems: "center", gap: 8 }}>
+                {priceTND.toFixed(3)} TND
+                <span style={{ fontSize: 14, background: "var(--accent)", color: "white", padding: "2px 6px", borderRadius: 4 }}>-{promo}%</span>
+              </div>
+            </div>
+          ) : (
+            <div style={{ marginTop: 14, fontWeight: 900, fontSize: 22, color: "var(--accent)" }}>
+              {priceTND.toFixed(3)} TND
+            </div>
+          )}
 
           <div style={{ marginTop: 10 }} className="muted">
             Stock : <b style={{ color: "#111" }}>{product.stock ?? 0}</b>
@@ -145,7 +160,12 @@ export default function ProductDetails() {
                   <button className="qtyBtn" type="button" onClick={inc}>+</button>
                 </div>
 
-                <button className="btnPrimary" type="button" onClick={add} style={{ marginTop: 0 }}>
+                <button className="cartBtn cartBtnPrimary" type="button" onClick={add} style={{ marginTop: 0, padding: "14px 24px", fontSize: "16px" }}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 10 }}>
+                    <circle cx="9" cy="21" r="1"></circle>
+                    <circle cx="20" cy="21" r="1"></circle>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                  </svg>
                   Ajouter au panier
                 </button>
               </>
@@ -281,7 +301,7 @@ export default function ProductDetails() {
         </div>
 
         <div className="panel">
-          <h2 className="sectionTitle">Avis récents</h2>
+          <h2 className="sectionTitle">Tous les avis</h2>
           {product.reviews && product.reviews.length > 0 ? (
             <div
               style={{
@@ -291,7 +311,7 @@ export default function ProductDetails() {
                 marginTop: 8,
               }}
             >
-              {product.reviews.slice(0, 5).map((r) => (
+              {product.reviews.map((r) => (
                 <div
                   key={r._id || `${r.user?._id}-${r.createdAt}`}
                   style={{

@@ -9,6 +9,7 @@ const productSchema = new mongoose.Schema(
     image: { type: String, default: "" },
     category: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true },
     stock: { type: Number, default: 10, min: 0 },
+    promoPercentage: { type: Number, default: 0, min: 0, max: 100 },
     // Avis / notes des clients
     reviews: [
       {

@@ -2,10 +2,11 @@ import React, { useEffect } from "react";
 import "./App.css";
 import "react-toastify/dist/ReactToastify.css";
 import { Routes, Route } from "react-router-dom";
-import { ToastContainer } from "react-toastify";
+import { ToastContainer, toast } from "react-toastify";
 import Navbar from "./Components/Navbar";
 import { useDispatch } from "react-redux";
 import { getMe } from "./JS/redux/slices/authSlice";
+import { io } from "socket.io-client";
 
 import Home from "./Pages/Home";
 import Login from "./Pages/Login";
@@ -17,6 +18,7 @@ import Cart from "./Pages/Cart";
 import Profile from "./Pages/Profile";
 import Invoice from "./Pages/Invoice";
 import Error from "./Pages/Error";
+import Chatbot from "./Components/Chatbot";
 
 // Admin
 import AdminDashboard from "./Pages/admin/AdminDashboard";
@@ -27,6 +29,10 @@ import AdminStats from "./Pages/admin/AdminStats";
 import AdminUsers from "./Pages/admin/AdminUsers";
 import AdminMessages from "./Pages/admin/AdminMessages";
 
+const socket = io(process.env.REACT_APP_API_URL || "http://localhost:5000", {
+  withCredentials: true,
+});
+
 function App() {
   const dispatch = useDispatch();
 
@@ -35,6 +41,21 @@ function App() {
       dispatch(getMe());
     }
   }, [dispatch]);
+
+  // ✅ Écoute Socket globale pour les notifications
+  useEffect(() => {
+    socket.on("new_notification", (notif) => {
+      toast.info(`🔔 NOUVEAU: ${notif.message}`, {
+        position: "bottom-right",
+        autoClose: 6000,
+        className: "socket-toast",
+      });
+    });
+
+    return () => {
+      socket.off("new_notification");
+    };
+  }, []);
 
   return (
     <>
@@ -56,6 +77,7 @@ function App() {
           boxShadow: "0 20px 40px rgba(0,0,0,0.12)",
         }}
       />
+      <Chatbot />
       <div className="container">
         <Routes>
           {/* Public */}
