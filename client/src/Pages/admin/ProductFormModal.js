@@ -15,7 +15,6 @@ export default function ProductFormModal({ initial, categories = [], onClose, on
   const [promoPercentage, setPromoPercentage] = useState(initial?.promoPercentage ?? 0);
   const [isFeatured, setIsFeatured] = useState(initial?.isFeatured ?? false);
   const [colors, setColors] = useState(initial?.colors?.join(", ") || "");
-  const [sizes, setSizes] = useState(initial?.sizes?.join(", ") || "");
   const [existingImages, setExistingImages] = useState(initial?.images || []);
   const [newImages, setNewImages] = useState([]);
 
@@ -35,7 +34,6 @@ export default function ProductFormModal({ initial, categories = [], onClose, on
     setPromoPercentage(initial?.promoPercentage ?? 0);
     setIsFeatured(initial?.isFeatured ?? false);
     setColors(initial?.colors?.join(", ") || "");
-    setSizes(initial?.sizes?.join(", ") || "");
     setExistingImages(initial?.images || []);
     setNewImages([]);
     setFile(null);
@@ -74,7 +72,8 @@ export default function ProductFormModal({ initial, categories = [], onClose, on
       }
     } catch (err) {
       console.error(err);
-      toast.error("❌ Erreur avec l'IA. Vérifiez que la clé API est configurée dans le backend.");
+      const errMsg = err.response?.data?.message || "Erreur de connexion avec l'IA.";
+      toast.error(`❌ ${errMsg}`);
     } finally {
       setAiGenerating(false);
     }
@@ -105,7 +104,6 @@ export default function ProductFormModal({ initial, categories = [], onClose, on
       fd.append("isFeatured", isFeatured);
 
       fd.append("colors", JSON.stringify(colors.split(",").map(c => c.trim()).filter(Boolean)));
-      fd.append("sizes", JSON.stringify(sizes.split(",").map(s => s.trim()).filter(Boolean)));
 
       if (existingImages.length > 0) {
         fd.append("images", JSON.stringify(existingImages));
@@ -117,11 +115,13 @@ export default function ProductFormModal({ initial, categories = [], onClose, on
       if (isEdit) await api.put(`/products/${initial._id}`, fd, config);
       else await api.post(`/products`, fd, config);
 
+      toast.success(isEdit ? "✨ Produit modifié avec succès !" : "🎉 Produit ajouté avec succès !");
       onSaved?.();
       onClose?.();
     } catch (err) {
       console.error(err);
       const msg = err.response?.data?.message || "Erreur lors de l'enregistrement";
+      toast.error(`❌ ${msg}`);
       setErrorMsg(msg);
     } finally {
       setLoading(false);
@@ -193,11 +193,6 @@ export default function ProductFormModal({ initial, categories = [], onClose, on
               style={{ width: "auto", margin: 0 }}
             />
             <label htmlFor="isFeatured" style={{ fontWeight: "bold", cursor: "pointer" }}>Mettre à la Une (Featured)</label>
-          </div>
-
-          <div className="field">
-            <label className="fieldLabel">Tailles (séparées par des virgules)</label>
-            <input value={sizes} onChange={(e) => setSizes(e.target.value)} placeholder="S, M, L, XL" />
           </div>
 
           <div className="field">

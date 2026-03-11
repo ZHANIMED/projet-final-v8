@@ -79,6 +79,15 @@ exports.describeImage = async (req, res, next) => {
 
         res.json({ description: response.text });
     } catch (err) {
-        next(err);
+        console.error("Erreur Gemini:", err);
+        let errorMessage = "Erreur de l'API IA";
+        try {
+            // Google API lists error as JSON string in err.message sometimes
+            const parsedError = JSON.parse(err.message);
+            errorMessage = parsedError.error?.message || err.message;
+        } catch (e) {
+            errorMessage = err.message || "Erreur de l'API IA";
+        }
+        res.status(400).json({ message: errorMessage });
     }
 };

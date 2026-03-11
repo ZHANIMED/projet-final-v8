@@ -43,12 +43,11 @@ exports.getOne = async (req, res, next) => {
 
 exports.create = async (req, res, next) => {
   try {
+    console.log("------- INCOMING PRODUCT CREATE -------", req.body);
     const { title, description = "", price, category, stock = 10, promoPercentage = 0, isFeatured = false } = req.body;
 
-    // Parsing colors and sizes arrays from FormData
-    let colors = [], sizes = [];
+    let colors = [];
     if (req.body.colors) colors = Array.isArray(req.body.colors) ? req.body.colors : JSON.parse(req.body.colors).filter(Boolean);
-    if (req.body.sizes) sizes = Array.isArray(req.body.sizes) ? req.body.sizes : JSON.parse(req.body.sizes).filter(Boolean);
 
     const image = (req.files && req.files.image) ? req.files.image[0].path : (req.body.image || "");
     let images = (req.files && req.files.images) ? req.files.images.map(f => f.path) : [];
@@ -69,7 +68,6 @@ exports.create = async (req, res, next) => {
       image,
       images,
       colors,
-      sizes,
       category,
       stock,
       promoPercentage,
@@ -78,6 +76,7 @@ exports.create = async (req, res, next) => {
 
     res.status(201).json({ product });
   } catch (err) {
+    console.error("PRODUCT CREATE ERROR:", err);
     if (err.code === 11000) {
       return res.status(409).json({ message: "Un produit avec ce slug existe déjà" });
     }
@@ -109,7 +108,6 @@ exports.update = async (req, res, next) => {
     if (isFeatured !== undefined) update.isFeatured = isFeatured;
 
     if (req.body.colors) update.colors = Array.isArray(req.body.colors) ? req.body.colors : JSON.parse(req.body.colors).filter(Boolean);
-    if (req.body.sizes) update.sizes = Array.isArray(req.body.sizes) ? req.body.sizes : JSON.parse(req.body.sizes).filter(Boolean);
 
     const image = (req.files && req.files.image) ? req.files.image[0].path : req.body.image;
     if (image !== undefined) update.image = image;
