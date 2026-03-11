@@ -4,9 +4,11 @@ import "react-toastify/dist/ReactToastify.css";
 import { Routes, Route } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import Navbar from "./Components/Navbar";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { getMe } from "./JS/redux/slices/authSlice";
+import { syncCartUser } from "./JS/redux/slices/cartSlice";
 import { io } from "socket.io-client";
+import api from "./JS/api/axios";
 
 import Home from "./Pages/Home";
 import Login from "./Pages/Login";
@@ -19,6 +21,7 @@ import Profile from "./Pages/Profile";
 import Invoice from "./Pages/Invoice";
 import Error from "./Pages/Error";
 import Chatbot from "./Components/Chatbot";
+import DynamicPage from "./Pages/DynamicPage";
 
 // Admin
 import AdminDashboard from "./Pages/admin/AdminDashboard";
@@ -28,6 +31,11 @@ import AdminOrders from "./Pages/admin/AdminOrders";
 import AdminStats from "./Pages/admin/AdminStats";
 import AdminUsers from "./Pages/admin/AdminUsers";
 import AdminMessages from "./Pages/admin/AdminMessages";
+import AdminCoupons from "./Pages/admin/AdminCoupons";
+import AdminSettings from "./Pages/admin/AdminSettings";
+import AdminReviews from "./Pages/admin/AdminReviews";
+import AdminNewsletter from "./Pages/admin/AdminNewsletter";
+import AdminPages from "./Pages/admin/AdminPages";
 
 const socket = io(process.env.REACT_APP_API_URL || "http://localhost:5000", {
   withCredentials: true,
@@ -35,12 +43,28 @@ const socket = io(process.env.REACT_APP_API_URL || "http://localhost:5000", {
 
 function App() {
   const dispatch = useDispatch();
+  const user = useSelector(s => s.auth.user);
+  const [globalSettings, setGlobalSettings] = React.useState(null);
 
   useEffect(() => {
     if (localStorage.getItem("token")) {
       dispatch(getMe());
     }
+    // Fetch global settings for Topbar Banner
+    const fetchSettings = () => api.get("/settings").then(({ data }) => setGlobalSettings(data)).catch(() => { });
+
+    fetchSettings();
+    window.addEventListener("settingsUpdated", fetchSettings);
+
+    return () => {
+      window.removeEventListener("settingsUpdated", fetchSettings);
+    };
   }, [dispatch]);
+
+  // ✅ Synchronise ownership of the cart with the logged-in user
+  useEffect(() => {
+    dispatch(syncCartUser(user?._id));
+  }, [user?._id, dispatch]);
 
   // ✅ Écoute Socket globale pour les notifications
   useEffect(() => {
@@ -59,6 +83,14 @@ function App() {
 
   return (
     <>
+      {/* Global Topbar Banner */}
+      {globalSettings?.bannerActive && globalSettings?.bannerText && (
+        <div className="marquee-container">
+          <div className="marquee-content">
+            {globalSettings.bannerText}
+          </div>
+        </div>
+      )}
       <Navbar />
       <ToastContainer
         position="top-right"
@@ -88,6 +120,7 @@ function App() {
           <Route path="/cart" element={<Cart />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/invoice" element={<Invoice />} />
+          <Route path="/pages/:slug" element={<DynamicPage />} />
 
           {/* Auth */}
           <Route path="/login" element={<Login />} />
@@ -101,6 +134,11 @@ function App() {
           <Route path="/admin/stats" element={<AdminStats />} />
           <Route path="/admin/users" element={<AdminUsers />} />
           <Route path="/admin/messages" element={<AdminMessages />} />
+          <Route path="/admin/coupons" element={<AdminCoupons />} />
+          <Route path="/admin/newsletter" element={<AdminNewsletter />} />
+          <Route path="/admin/settings" element={<AdminSettings />} />
+          <Route path="/admin/reviews" element={<AdminReviews />} />
+          <Route path="/admin/pages" element={<AdminPages />} />
 
           {/* 404 */}
           <Route path="*" element={<Error />} />

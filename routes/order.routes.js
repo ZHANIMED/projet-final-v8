@@ -3,6 +3,7 @@ const router = express.Router();
 const Order = require("../models/Order");
 const Product = require("../models/Product");
 const User = require("../models/User");
+const Coupon = require("../models/Coupon");
 const Notification = require("../models/Notification");
 const isAuth = require("../middlewares/isAuth");
 const isAdmin = require("../middlewares/isAdmin");
@@ -17,7 +18,7 @@ const {
 // Créer une commande + décrémenter le stock + envoyer emails
 router.post("/", maybeAuth, async (req, res, next) => {
     try {
-        const { items, total, shippingAddress, phone, guestName } = req.body;
+        const { items, shippingAddress, phone, guestName, appliedCoupon } = req.body;
 
         if (!items || items.length === 0) {
             return res.status(400).json({ message: "Le panier est vide" });
@@ -40,7 +41,24 @@ router.post("/", maybeAuth, async (req, res, next) => {
             }
         }
 
-        // 2. Créer la commande
+        // 2. Calculer le total sécurisé
+        let finalTotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
+
+        if (appliedCoupon) {
+            const coupon = await Coupon.findOne({ code: appliedCoupon.toUpperCase(), isActive: true });
+            if (coupon && (!coupon.expiresAt || new Date() <= new Date(coupon.expiresAt))) {
+                if (coupon.usageLimit > 0 && coupon.usageCount >= coupon.usageLimit) {
+                    return res.status(400).json({ message: "La limite d'utilisation de ce code promo a été atteinte." });
+                }
+                finalTotal = finalTotal - (finalTotal * coupon.discountPercentage / 100);
+                coupon.usageCount = (coupon.usageCount || 0) + 1;
+                await coupon.save();
+            } else {
+                return res.status(400).json({ message: "Code promo refusé : expiré ou invalide." });
+            }
+        }
+
+        // 3. Créer la commande
         const newOrder = new Order({
             user: req.user ? req.user.id : null,
             items: items.map(x => ({
@@ -50,7 +68,7 @@ router.post("/", maybeAuth, async (req, res, next) => {
                 qty: x.qty,
                 image: x.image
             })),
-            total,
+            total: finalTotal,
             shippingAddress: shippingAddress || "Adresse non fournie",
             phone: phone || "Téléphone non fourni",
             guestName: guestName,
@@ -73,9 +91,9 @@ router.post("/", maybeAuth, async (req, res, next) => {
         try {
             const customerName = userDoc?.name || newOrder.guestName || "Un client";
             const itemsCount = items.reduce((sum, item) => sum + item.qty, 0);
-            // Le total est un nombre, on le formate pour l'affichage
-            const totalValue = typeof total === "number" ? total.toFixed(3) : (typeof total === "string" ? total.replace(" TND", "").trim() : total);
-            
+
+            const totalValue = finalTotal.toFixed(3);
+
             const notification = await Notification.create({
                 message: `Nouvelle commande de ${customerName}: ${itemsCount} article(s) pour ${totalValue} TND`,
                 type: "order",
@@ -195,6 +213,17 @@ router.get("/", isAuth, isAdmin, async (req, res, next) => {
     try {
         const orders = await Order.find()
             .populate("user", "name email")
+            .sort({ createdAt: -1 });
+        res.status(200).json(orders);
+    } catch (error) {
+        next(error);
+    }
+});
+
+// GET /api/orders/user/:id - Récupérer les commandes d'un utilisateur spécifique (Admin)
+router.get("/user/:id", isAuth, isAdmin, async (req, res, next) => {
+    try {
+        const orders = await Order.find({ user: req.params.id })
             .sort({ createdAt: -1 });
         res.status(200).json(orders);
     } catch (error) {

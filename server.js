@@ -20,7 +20,12 @@ app.use(cors({ origin: process.env.CLIENT_URL || "http://localhost:3000", creden
 app.use(express.json({ limit: "5mb" }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-app.get("/", (req, res) => res.send("API OK ✅"));
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  next();
+});
+
+app.get("/", (req, res) => res.send("API OK - VERSION 2.1 ✅"));
 
 app.use("/api/auth", require("./routes/auth.routes"));
 app.use("/api/categories", require("./routes/category.routes"));
@@ -30,6 +35,13 @@ app.use("/api/users", require("./routes/user.routes"));
 app.use("/api/orders", require("./routes/order.routes"));
 app.use("/api/notifications", require("./routes/notification.routes"));
 app.use("/api/ai", require("./routes/ai.routes"));
+app.use("/api/coupons", require("./routes/coupon.routes"));
+app.use("/api/settings", require("./routes/settings.routes"));
+app.use("/api/newsletter", require("./routes/newsletter.routes"));
+app.use("/api/pages", require("./routes/page.routes"));
+
+// Admin routes - Déplacés vers admin.routes.js
+app.use("/api/admin", require("./routes/admin.routes"));
 
 app.use(errorHandler);
 
@@ -40,7 +52,7 @@ io.on("connection", (socket) => {
 });
 
 connectDB(process.env.MONGO_URI).then(() => {
-  server.listen(process.env.PORT || 5000, () =>
-    console.log(`✅ Server on http://localhost:${process.env.PORT || 5000}`)
-  );
+  server.listen(process.env.PORT || 5000, () => {
+    console.log(`✅ Server on http://localhost:${process.env.PORT || 5000}`);
+  });
 });

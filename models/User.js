@@ -10,6 +10,7 @@ const userSchema = new mongoose.Schema(
     phone: { type: String, default: "" },
     address: { type: String, default: "" },
     photo: { type: String, default: "" },
+    isBanned: { type: Boolean, default: false }
   },
   { timestamps: true }
 );

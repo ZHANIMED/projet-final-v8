@@ -205,15 +205,15 @@ export default function Profile() {
           <div className="profileActions">
             {!editing ? (
               <button className="pBtn pBtnPrimary" onClick={() => setEditing(true)}>
-                Modifier
+                ✏️ Modifier
               </button>
             ) : (
               <>
                 <button className="pBtn pBtnPrimary" onClick={onSave} disabled={loading}>
-                  {loading ? "Enregistrement..." : "Enregistrer"}
+                  {loading ? "⏳ Enregistrement..." : "💾 Enregistrer"}
                 </button>
                 <button className="pBtn pBtnGhost" onClick={onCancel} disabled={loading}>
-                  Annuler
+                  ❌ Annuler
                 </button>
               </>
             )}
@@ -274,12 +274,12 @@ export default function Profile() {
         >
           <button
             type="button"
-            className="btnPrimary"
+            className="pBtn pBtnPrimary"
             onClick={sendAdminMessage}
             disabled={sendingMessage || !adminMessage.trim()}
             style={{ marginTop: 0 }}
           >
-            {sendingMessage ? "Envoi..." : "Envoyer le message"}
+            {sendingMessage ? "⏳ Envoi..." : "✉️ Envoyer le message"}
           </button>
         </div>
       </section>

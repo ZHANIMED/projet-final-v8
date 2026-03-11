@@ -3,11 +3,14 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import "./Navbar.css";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../JS/redux/slices/authSlice";
+import { fetchActiveCoupon } from "../JS/redux/slices/couponSlice";
 import logo from "../assets/MYECODECO.png";
 import NotificationBell from "./NotificationBell";
 
 export default function Navbar() {
   const { user } = useSelector((s) => s.auth);
+
+  const { activeCoupon } = useSelector((s) => s.coupon);
 
   const cartCount = useSelector((s) =>
     (s.cart?.items || []).reduce((a, x) => a + (x.qty || 0), 0)
@@ -29,6 +32,12 @@ export default function Navbar() {
     dispatch(logout());
     navigate("/login");
   };
+
+  React.useEffect(() => {
+    if (user) {
+      dispatch(fetchActiveCoupon());
+    }
+  }, [dispatch, user]);
 
   return (
     <header className="nav">

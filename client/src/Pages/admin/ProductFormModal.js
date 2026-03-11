@@ -13,6 +13,12 @@ export default function ProductFormModal({ initial, categories = [], onClose, on
   const [category, setCategory] = useState(initial?.category?._id || initial?.category || "");
   const [stock, setStock] = useState(initial?.stock ?? 0);
   const [promoPercentage, setPromoPercentage] = useState(initial?.promoPercentage ?? 0);
+  const [isFeatured, setIsFeatured] = useState(initial?.isFeatured ?? false);
+  const [colors, setColors] = useState(initial?.colors?.join(", ") || "");
+  const [sizes, setSizes] = useState(initial?.sizes?.join(", ") || "");
+  const [existingImages, setExistingImages] = useState(initial?.images || []);
+  const [newImages, setNewImages] = useState([]);
+
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState("");
   const [loading, setLoading] = useState(false);
@@ -27,6 +33,11 @@ export default function ProductFormModal({ initial, categories = [], onClose, on
     setCategory(initial?.category?._id || initial?.category || "");
     setStock(initial?.stock ?? 0);
     setPromoPercentage(initial?.promoPercentage ?? 0);
+    setIsFeatured(initial?.isFeatured ?? false);
+    setColors(initial?.colors?.join(", ") || "");
+    setSizes(initial?.sizes?.join(", ") || "");
+    setExistingImages(initial?.images || []);
+    setNewImages([]);
     setFile(null);
     setPreview(initial?.image || "");
   }, [initial]);
@@ -91,6 +102,15 @@ export default function ProductFormModal({ initial, categories = [], onClose, on
       fd.append("category", category);
       fd.append("stock", Number(stock) || 0);
       fd.append("promoPercentage", Number(promoPercentage) || 0);
+      fd.append("isFeatured", isFeatured);
+
+      fd.append("colors", JSON.stringify(colors.split(",").map(c => c.trim()).filter(Boolean)));
+      fd.append("sizes", JSON.stringify(sizes.split(",").map(s => s.trim()).filter(Boolean)));
+
+      if (existingImages.length > 0) {
+        fd.append("images", JSON.stringify(existingImages));
+      }
+      newImages.forEach(f => fd.append("images", f));
 
       const config = { headers: { "Content-Type": "multipart/form-data" } };
 
@@ -164,6 +184,27 @@ export default function ProductFormModal({ initial, categories = [], onClose, on
             <input type="number" min="0" max="100" value={promoPercentage} onChange={(e) => setPromoPercentage(e.target.value)} />
           </div>
 
+          <div className="field" style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "10px" }}>
+            <input
+              type="checkbox"
+              id="isFeatured"
+              checked={isFeatured}
+              onChange={(e) => setIsFeatured(e.target.checked)}
+              style={{ width: "auto", margin: 0 }}
+            />
+            <label htmlFor="isFeatured" style={{ fontWeight: "bold", cursor: "pointer" }}>Mettre à la Une (Featured)</label>
+          </div>
+
+          <div className="field">
+            <label className="fieldLabel">Tailles (séparées par des virgules)</label>
+            <input value={sizes} onChange={(e) => setSizes(e.target.value)} placeholder="S, M, L, XL" />
+          </div>
+
+          <div className="field">
+            <label className="fieldLabel">Couleurs (séparées par des virgules)</label>
+            <input value={colors} onChange={(e) => setColors(e.target.value)} placeholder="Rouge, Bleu, Vert" />
+          </div>
+
           <div className="field fieldSpan2">
             <label className="fieldLabel">Image (URL ou fichier)</label>
             <input value={image} onChange={(e) => setImage(e.target.value)} placeholder="URL de l'image (optionnel)" />
@@ -218,8 +259,52 @@ export default function ProductFormModal({ initial, categories = [], onClose, on
                     if (fileInput) fileInput.value = "";
                   }}
                 >
-                  🗑️ Retirer l'image
+                  🗑️ Retirer l'image principale
                 </button>
+              </div>
+            )}
+          </div>
+
+          <div className="field fieldSpan2">
+            <label className="fieldLabel">Galerie d'images supplémentaires</label>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              className="customFileInput"
+              onChange={(e) => setNewImages(Array.from(e.target.files || []))}
+            />
+
+            {/* Display new images preview */}
+            {newImages.length > 0 && (
+              <div style={{ marginTop: 10, display: "flex", gap: 10, flexWrap: "wrap" }}>
+                {newImages.map((file, idx) => (
+                  <div key={idx} style={{ position: "relative" }}>
+                    <img src={URL.createObjectURL(file)} alt="new preview" style={{ width: 80, height: 80, objectFit: "cover", borderRadius: 8 }} />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Display existing images */}
+            {existingImages.length > 0 && (
+              <div style={{ marginTop: 10, display: "flex", gap: 10, flexWrap: "wrap" }}>
+                {existingImages.map((img, idx) => (
+                  <div key={idx} style={{ position: "relative" }}>
+                    <img src={img} alt="existing" style={{ width: 80, height: 80, objectFit: "cover", borderRadius: 8 }} />
+                    <button
+                      type="button"
+                      onClick={() => setExistingImages(existingImages.filter((_, i) => i !== idx))}
+                      style={{
+                        position: "absolute", top: -5, right: -5, background: "red", color: "white",
+                        border: "none", borderRadius: "50%", width: 20, height: 20, cursor: "pointer",
+                        fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center"
+                      }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
           </div>

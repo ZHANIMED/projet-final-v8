@@ -7,9 +7,13 @@ const productSchema = new mongoose.Schema(
     description: { type: String, default: "" },
     price: { type: Number, required: true, min: 0 },
     image: { type: String, default: "" },
+    images: [{ type: String }],
+    colors: [{ type: String }],
+    sizes: [{ type: String }],
     category: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true },
     stock: { type: Number, default: 10, min: 0 },
     promoPercentage: { type: Number, default: 0, min: 0, max: 100 },
+    isFeatured: { type: Boolean, default: false },
     // Avis / notes des clients
     reviews: [
       {
@@ -28,6 +32,10 @@ const productSchema = new mongoose.Schema(
           type: String,
           trim: true,
           maxlength: 1000,
+        },
+        isApproved: {
+          type: Boolean,
+          default: false,
         },
         createdAt: {
           type: Date,

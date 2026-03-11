@@ -23,6 +23,9 @@ export default function ProductDetails() {
   const [rating, setRating] = useState(8);
   const [sendingReview, setSendingReview] = useState(false);
 
+  // ✅ Nouveau Modal Promo
+  const [earnedPromo, setEarnedPromo] = useState(null);
+
   useEffect(() => {
     dispatch(fetchProductBySlug(slug));
     return () => {
@@ -87,8 +90,26 @@ export default function ProductDetails() {
         comment: reviewText.trim(),
       });
       setReviewText("");
-      toast.success("Merci pour votre avis !");
-      // recharger le produit pour voir la nouvelle note
+
+      // ✅ Message clair sur l'ajout de l'avis
+      toast.success("Merci ! Votre avis a été publié avec succès.", { autoClose: 4000 });
+
+      // ✅ Si la note est excellente (> 7), on offre un code promo s'il y en a un d'actif
+      if (rating > 7) {
+        try {
+          const { data } = await api.get("/coupons/active");
+          if (data && data.code) {
+            // Au lieu d'un toast, on affiche le joli Modal persistant
+            setEarnedPromo(data);
+            setSendingReview(false);
+            return; // 🛑 On s'arrête ici, on ne recharge pas la page tout de suite !
+          }
+        } catch (err) {
+          // Pas de code promo actif (404) ou erreur silencieuse
+        }
+      }
+
+      // S'il n'y a pas eu de modal promo, on recharge la page normalement
       dispatch(fetchProductBySlug(slug));
     } catch (error) {
       const msg =
@@ -311,7 +332,7 @@ export default function ProductDetails() {
                 marginTop: 8,
               }}
             >
-              {product.reviews.map((r) => (
+              {product.reviews.filter(r => r.isApproved).map((r) => (
                 <div
                   key={r._id || `${r.user?._id}-${r.createdAt}`}
                   style={{
@@ -391,6 +412,63 @@ export default function ProductDetails() {
           )}
         </div>
       </div>
+
+      {/* ✅ Modal de Promo Cadeau */}
+      {earnedPromo && (
+        <div
+          className="modalOverlay"
+          style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: "20px" }}
+        >
+          <div
+            className="modal"
+            style={{
+              background: "#fff",
+              padding: "40px",
+              borderRadius: "24px",
+              textAlign: "center",
+              maxWidth: "500px",
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+              border: "2px solid var(--accent)",
+              animation: "fadeInUp 0.3s ease-out"
+            }}
+          >
+            <div style={{ fontSize: "60px", marginBottom: "15px" }}>🎁</div>
+            <h2 style={{ margin: "0 0 15px", fontSize: "28px", color: "var(--accent)" }}>Merci pour votre avis !</h2>
+            <p style={{ fontSize: "16px", color: "var(--text)", marginBottom: "25px", lineHeight: "1.5" }}>
+              Pour vous remercier de votre excellente note, nous vous offrons <b>{earnedPromo.discountPercentage}% de réduction</b> sur l'ensemble de notre boutique !
+            </p>
+
+            <div style={{ background: "#fbfbfa", border: "1px dashed var(--muted)", borderRadius: "12px", padding: "20px", marginBottom: "25px", display: "flex", flexDirection: "column", alignItems: "center", gap: "15px" }}>
+              <span style={{ fontSize: "14px", color: "var(--muted)", textTransform: "uppercase", letterSpacing: "1px", fontWeight: "bold" }}>Votre Code Promo</span>
+              <span style={{ fontSize: "32px", fontWeight: "900", letterSpacing: "2px", color: "#111" }}>{earnedPromo.code}</span>
+            </div>
+
+            <div style={{ display: "flex", gap: "15px", justifyContent: "center" }}>
+              <button
+                className="ecoBtn ghost"
+                onClick={() => {
+                  setEarnedPromo(null);
+                  dispatch(fetchProductBySlug(slug)); // ✅ Recharge la page une fois fermé
+                }}
+              >
+                Fermer
+              </button>
+
+              <button
+                className="ecoBtn"
+                onClick={() => {
+                  navigator.clipboard.writeText(earnedPromo.code);
+                  toast.success("Code copié dans le presse-papier !", { autoClose: 2000, position: "top-center" });
+                }}
+                style={{ background: "var(--accent)", border: "none" }}
+              >
+                📋 Copier le code
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

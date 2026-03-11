@@ -4,7 +4,6 @@ import { changeQty, removeFromCart, clearCart } from "../JS/redux/slices/cartSli
 import { Link, useNavigate } from "react-router-dom";
 import api from "../JS/api/axios";
 import { toast } from "react-toastify";
-import GuestOrderModal from "../Components/GuestOrderModal";
 
 
 export default function Cart() {
@@ -12,7 +11,10 @@ export default function Cart() {
   const navigate = useNavigate();
   const items = useSelector((s) => s.cart.items);
   const user = useSelector((s) => s.auth.user);
-  const [showGuestModal, setShowGuestModal] = React.useState(false);
+
+  const [promoCode, setPromoCode] = React.useState("");
+  const [discount, setDiscount] = React.useState(0);
+  const [applyingPromo, setApplyingPromo] = React.useState(false);
 
   // ✅ helper pour afficher en TND
   const toTND = (price) => {
@@ -20,35 +22,48 @@ export default function Cart() {
     return `${v.toFixed(3)} TND`;
   };
 
-  const totalTND = items.reduce((sum, x) => sum + x.price * x.qty, 0);
+  const subtotal = items.reduce((sum, x) => sum + x.price * x.qty, 0);
+  const totalTND = subtotal - (subtotal * discount / 100);
 
-  const handleCheckout = async (guestData = null) => {
-    if (!user?._id && !guestData) {
-      setShowGuestModal(true);
+  const handleApplyPromo = async () => {
+    if (!promoCode.trim()) return;
+    try {
+      setApplyingPromo(true);
+      const { data } = await api.post("/coupons/validate", { code: promoCode });
+      setDiscount(data.discount);
+      toast.success(data.message);
+    } catch (err) {
+      setDiscount(0);
+      toast.error(err.response?.data?.message || "Code invalide");
+    } finally {
+      setApplyingPromo(false);
+    }
+  };
+
+  const handleCheckout = async () => {
+    if (!user?._id) {
+      toast.info("Veuillez vous connecter pour valider votre commande.", { autoClose: 4000 });
+      navigate("/login");
       return;
     }
 
     try {
-      const phone = user?._id ? user.phone : guestData.phone;
-      const address = user?._id ? user.address : guestData.address;
-      const name = user?._id ? user.name : guestData.name;
-
       const { data } = await api.post("/orders", {
         items,
         total: totalTND,
-        phone: phone,
-        shippingAddress: address,
-        guestName: name,
+        phone: user.phone,
+        shippingAddress: user.address,
+        guestName: user.name,
+        appliedCoupon: discount > 0 ? promoCode : null
       });
 
-      setShowGuestModal(false);
       dispatch(clearCart());
 
       // ✅ Redirection vers la facture avec les données
       navigate("/invoice", {
         state: {
           order: data.order || data,
-          userName: name
+          userName: user.name
         }
       });
     } catch (error) {
@@ -207,37 +222,61 @@ export default function Cart() {
             ))}
           </div>
 
-          <div className="cartFooter">
-            {/* ✅ total en TND */}
-            <div className="cartTotal">
-              Total : <span>{toTND(totalTND)}</span>
-            </div>
+          {/* Code Promo UI */}
+          <div style={{ display: "flex", gap: "10px", alignItems: "center", marginBottom: "16px", paddingBottom: "16px", borderBottom: "1px solid var(--line)", width: "100%", flexWrap: "wrap" }}>
+            <input
+              type="text"
+              placeholder="Code Promo"
+              value={promoCode}
+              onChange={(e) => setPromoCode(e.target.value)}
+              style={{ padding: "10px 14px", borderRadius: "10px", border: "1px solid var(--line)", outline: "none", flex: 1, minWidth: "150px" }}
+            />
+            <button
+              className="cartBtn cartBtnPrimary"
+              style={{ padding: "10px 20px" }}
+              onClick={handleApplyPromo}
+              disabled={applyingPromo || !promoCode}
+            >
+              {applyingPromo ? "Test..." : "Appliquer"}
+            </button>
+          </div>
 
-            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", flex: 1, justifyContent: "flex-end" }}>
-              <Link to="/products" className="cartBtn cartBtnGhost" style={{ textDecoration: 'none' }}>
-                Continuer mes achats
-              </Link>
+          {/* ✅ total en TND */}
+          <div className="cartTotal" style={{ width: "100%", display: "flex", justifyContent: "space-between", marginBottom: "16px" }}>
+            {discount > 0 ? (
+              <>
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  <span style={{ fontSize: 14, color: "var(--muted)", textDecoration: "line-through" }}>{toTND(subtotal)}</span>
+                  <span>Total (-{discount}%) :</span>
+                </div>
+                <span>{toTND(totalTND)}</span>
+              </>
+            ) : (
+              <>
+                <span>Total :</span>
+                <span>{toTND(totalTND)}</span>
+              </>
+            )}
+          </div>
 
-              <button className="cartBtn cartBtnGhost" onClick={() => dispatch(clearCart())}>
-                Vider le panier
-              </button>
+          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", flex: 1, justifyContent: "flex-end", width: "100%" }}>
+            <Link to="/products" className="cartBtn cartBtnGhost" style={{ textDecoration: 'none' }}>
+              Continuer mes achats
+            </Link>
 
-              <button
-                className="cartBtn cartBtnPrimary"
-                onClick={handleCheckout}
-              >
-                Valider la commande
-              </button>
-            </div>
+            <button className="cartBtn cartBtnGhost" onClick={() => dispatch(clearCart())}>
+              Vider le panier
+            </button>
+
+            <button
+              className="cartBtn cartBtnPrimary"
+              onClick={handleCheckout}
+            >
+              Valider la commande
+            </button>
           </div>
         </>
       )}
-
-      <GuestOrderModal
-        isOpen={showGuestModal}
-        onClose={() => setShowGuestModal(false)}
-        onConfirm={(data) => handleCheckout(data)}
-      />
     </div>
   );
 }

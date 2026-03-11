@@ -178,3 +178,61 @@
     height: 42px
   }
 }
+
+/* Promo Banner */
+.promoBanner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #111 0%, #333 100%);
+  color: #fff;
+  padding: 6px 16px;
+  border-radius: 99px;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: pulse 2s infinite ease-in-out;
+  cursor: default;
+  user-select: none;
+}
+
+.promoLabel {
+  opacity: 0.8;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.promoCode {
+  color: #fff;
+  letter-spacing: 1px;
+  font-weight: 900;
+}
+
+.promoDiscount {
+  background: var(--accent, #e67e22);
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.02);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@media(max-width: 1050px) {
+  .promoBanner {
+    display: none;
+  }
+}

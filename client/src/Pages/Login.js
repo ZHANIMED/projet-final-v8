@@ -20,6 +20,26 @@ export default function Login() {
       if (res.payload.user?.isAdmin) {
         navigate("/admin");
       } else {
+        // Check for active promo codes and show a banner-like toast
+        try {
+          // Must access api via the axios instance to maintain the url prefix
+          const api = require("../JS/api/axios").default;
+          const { data } = await api.get("/coupons/active");
+          if (data && data.code) {
+            setTimeout(() => {
+              toast.success(
+                `🎉 Bienvenue ! Obtenez -${data.discountPercentage}% sur votre panier avec le code : ${data.code}`,
+                {
+                  autoClose: 8000,
+                  position: "top-center",
+                  style: { border: "2px solid #c79b5b", background: "#fbfbfa", color: "#111" }
+                }
+              );
+            }, 500); // Slight delay so it appears clearly after the login success toast
+          }
+        } catch (err) {
+          // No active coupon found or error, just navigate quietly
+        }
         navigate("/");
       }
     } else {

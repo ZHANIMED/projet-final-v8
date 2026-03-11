@@ -4,12 +4,15 @@ import logo from "../assets/MYECODECO.png";
 import printerIcon from "../assets/printer.png";
 import { toast } from "react-toastify";
 import ConfirmModal from "../Components/ConfirmModal";
+import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
 
 export default function Invoice() {
     const location = useLocation();
     const order = location.state?.order;
     const [paying, setPaying] = useState(false);
     const [showAlert, setShowAlert] = useState(false);
+    const [downloading, setDownloading] = useState(false);
 
     if (!order) {
         return <Navigate to="/products" />;
@@ -17,6 +20,32 @@ export default function Invoice() {
 
     const printInvoice = () => {
         window.print();
+    };
+
+    const downloadPDF = async () => {
+        const element = document.querySelector('.invoicePaper');
+        if (!element) return;
+
+        setDownloading(true);
+        toast.info("📄 Génération de la facture en cours...", { autoClose: 2000 });
+
+        try {
+            // scale 2 pour une bonne qualité
+            const canvas = await html2canvas(element, { scale: 2, useCORS: true });
+            const imgData = canvas.toDataURL('image/png');
+
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            pdf.save(`Facture_MyEcoDeco_${order._id.slice(-6).toUpperCase()}.pdf`);
+        } catch (error) {
+            console.error(error);
+            toast.error("Erreur lors de la génération du PDF.");
+        } finally {
+            setDownloading(false);
+        }
     };
 
     const handlePayment = () => {
@@ -49,9 +78,26 @@ export default function Invoice() {
                     ← Retour Boutique
                 </Link>
 
-                <div style={{ display: "flex", gap: "15px" }}>
+                <div style={{ display: "flex", gap: "15px", flexWrap: "wrap", justifyContent: "flex-end" }}>
                     <button
-                        className="ecoBtn"
+                        className="ecoBtn ghost"
+                        disabled={downloading}
+                        onClick={downloadPDF}
+                        style={{
+                            background: "#fff",
+                            color: "#1e293b",
+                            border: "1px solid #e2e8f0",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
+                            padding: "12px 24px"
+                        }}
+                    >
+                        <span>{downloading ? "Génération..." : "📄 Télécharger PDF"}</span>
+                    </button>
+
+                    <button
+                        className="ecoBtn ghost"
                         onClick={printInvoice}
                         style={{
                             background: "#fff",

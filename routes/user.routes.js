@@ -68,4 +68,27 @@ router.patch("/:id/toggle-admin", isAuth, isAdmin, async (req, res, next) => {
   }
 });
 
+// PATCH /api/users/:id/toggle-ban - Bannir / Débannir (Admin)
+router.patch("/:id/toggle-ban", isAuth, isAdmin, async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: "Utilisateur introuvable" });
+
+    // Empêcher de bannir son propre compte
+    if (user._id.toString() === req.user.id) {
+      return res.status(403).json({ message: "Impossible de bannir votre propre compte" });
+    }
+
+    user.isBanned = !user.isBanned;
+    await user.save();
+
+    res.json({
+      message: user.isBanned ? "Utilisateur banni" : "Utilisateur débanni",
+      user: { id: user._id, name: user.name, isBanned: user.isBanned }
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;

@@ -57,6 +57,10 @@ exports.login = async (req, res, next) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(401).json({ message: "Identifiants invalides" });
 
+    if (user.isBanned) {
+      return res.status(403).json({ message: "Votre compte a été bloqué par un administrateur." });
+    }
+
     const ok = await user.comparePassword(password);
     if (!ok) return res.status(401).json({ message: "Identifiants invalides" });
 
@@ -90,6 +94,10 @@ exports.me = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
     if (!user) return res.status(404).json({ message: "Utilisateur non trouvé" });
+
+    if (user.isBanned) {
+      return res.status(403).json({ message: "Votre compte a été bloqué." });
+    }
 
     res.json({
       user: {

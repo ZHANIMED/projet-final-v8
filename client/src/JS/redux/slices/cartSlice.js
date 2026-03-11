@@ -1,15 +1,33 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { toast } from "react-toastify";
+import { logout } from "./authSlice";
 
-const persisted = localStorage.getItem("cart");
-const initialItems = persisted ? JSON.parse(persisted) : [];
+const persisted = sessionStorage.getItem("cart");
+let parsed = { items: [], userId: null };
+try {
+  const p = JSON.parse(persisted);
+  if (Array.isArray(p)) parsed = { items: p, userId: null }; // legacy
+  else if (p) parsed = p;
+} catch (e) { }
 
-const save = (items) => localStorage.setItem("cart", JSON.stringify(items));
+const save = (state) => sessionStorage.setItem("cart", JSON.stringify({ items: state.items, userId: state.userId }));
 
 const cartSlice = createSlice({
   name: "cart",
-  initialState: { items: initialItems },
+  initialState: { items: parsed.items || [], userId: parsed.userId || null },
   reducers: {
+    syncCartUser(state, action) {
+      const currentUserId = action.payload; // either userId or null/undefined
+      if (currentUserId) {
+        // User logged in / exists
+        if (state.userId && state.userId !== currentUserId) {
+          // Different user logged in -> clear cart
+          state.items = [];
+        }
+        state.userId = currentUserId;
+        save(state);
+      }
+    },
     addToCart(state, action) {
       const payload = action.payload || {};
       const product = payload.product ?? payload;
@@ -42,7 +60,7 @@ const cartSlice = createSlice({
           stock: stock, // On garde trace du stock si possible
         });
       }
-      save(state.items);
+      save(state);
     },
 
     removeFromCart(state, action) {
@@ -62,15 +80,22 @@ const cartSlice = createSlice({
       }
 
       item.qty = newQty;
-      save(state.items);
+      save(state);
     },
 
     clearCart(state) {
       state.items = [];
-      save(state.items);
+      save(state);
     },
   },
+  extraReducers: (builder) => {
+    builder.addCase(logout, (state) => {
+      state.items = [];
+      state.userId = null;
+      save(state);
+    });
+  }
 });
 
-export const { addToCart, removeFromCart, changeQty, clearCart } = cartSlice.actions;
+export const { addToCart, removeFromCart, changeQty, clearCart, syncCartUser } = cartSlice.actions;
 export default cartSlice.reducer;

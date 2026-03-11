@@ -1,7 +1,9 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchProducts } from "../../JS/redux/slices/productSlice";
+import api from "../../JS/api/axios";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 const panels = [
   {
@@ -58,14 +60,60 @@ const panels = [
     shadow: "0 10px 30px rgba(163, 230, 165, 0.25)",
     textColor: "#1b4332",
   },
+  {
+    to: "/admin/coupons",
+    icon: "🎟️",
+    label: "Code Promo",
+    desc: "Bons de réduction",
+    gradient: "linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%)", // Silver / light gray
+    shadow: "0 10px 30px rgba(235, 237, 238, 0.5)",
+    textColor: "#2d3436",
+  },
+  {
+    to: "/admin/settings",
+    icon: "⚙️",
+    label: "Paramètres CMS",
+    desc: "Logo, contact & réseaux",
+    gradient: "linear-gradient(135deg, #e2ebf0 0%, #cfd9df 100%)",
+    shadow: "0 10px 30px rgba(207, 217, 223, 0.3)",
+    textColor: "#2c3e50",
+  },
+  {
+    to: "/admin/reviews",
+    icon: "⭐",
+    label: "Avis clients",
+    desc: "Modérer les commentaires",
+    gradient: "linear-gradient(135deg, #fff1eb 0%, #ace0f9 100%)",
+    shadow: "0 10px 30px rgba(172, 224, 249, 0.3)",
+    textColor: "#2d3436",
+  },
+  {
+    to: "/admin/newsletter",
+    icon: "📧",
+    label: "Newsletter",
+    desc: "Abonnés",
+    gradient: "linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)",
+    shadow: "0 10px 30px rgba(161, 140, 209, 0.2)",
+    textColor: "#4a3a63",
+  },
 ];
 
 export default function AdminDashboard() {
   const dispatch = useDispatch();
   const { list: products } = useSelector((s) => s.products);
 
+  const [stats, setStats] = useState(null);
+  const [loadingStats, setLoadingStats] = useState(true);
+
   useEffect(() => {
     dispatch(fetchProducts({}));
+
+    // Fetch stats
+    api.get("/admin/stats/dashboard")
+      .then(res => setStats(res.data))
+      .catch(console.error)
+      .finally(() => setLoadingStats(false));
+
   }, [dispatch]);
 
   const lowStockProducts = products.filter((p) => (p.stock || 0) <= 5);
@@ -119,24 +167,78 @@ export default function AdminDashboard() {
       )}
 
       {/* Header */}
-      <div style={{ marginBottom: 36 }}>
-        <h1
-          style={{
-            margin: "0 0 8px",
-            fontSize: 42,
-            fontWeight: 900,
-            letterSpacing: "-0.8px",
-            background: "linear-gradient(135deg, #111, #555)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-          }}
-        >
-          Tableau de bord
-        </h1>
-        <p style={{ margin: 0, color: "var(--muted)", fontSize: 16 }}>
-          Bienvenue, administrateur 👋
-        </p>
+      <div style={{ marginBottom: 36, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div>
+          <h1
+            style={{
+              margin: "0 0 8px",
+              fontSize: 42,
+              fontWeight: 900,
+              letterSpacing: "-0.8px",
+              background: "linear-gradient(135deg, #111, #555)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+            }}
+          >
+            Tableau de bord
+          </h1>
+          <p style={{ margin: 0, color: "var(--muted)", fontSize: 16 }}>
+            Bienvenue, administrateur 👋
+          </p>
+        </div>
+        {stats && stats.pendingCount > 0 && (
+          <Link to="/admin/orders" style={{ textDecoration: 'none' }}>
+            <div style={{ background: "#fee2e2", color: "#ef4444", padding: "10px 20px", borderRadius: 12, fontWeight: 900, display: "flex", alignItems: "center", gap: 10, boxShadow: "0 4px 10px rgba(239, 68, 68, 0.2)" }}>
+              <span style={{ fontSize: 20 }}>📦</span>
+              {stats.pendingCount} Commande{stats.pendingCount > 1 ? "s" : ""} à traiter
+            </div>
+          </Link>
+        )}
       </div>
+
+      {stats && (
+        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 20, marginBottom: 40 }}>
+          {/* Graphique Revenus */}
+          <div className="panel" style={{ padding: 24 }}>
+            <h3 style={{ marginTop: 0, marginBottom: 20 }}>Revenus (30 derniers jours)</h3>
+            <div style={{ width: "100%", height: 300 }}>
+              <ResponsiveContainer>
+                <LineChart data={stats.revenueData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
+                  <XAxis dataKey="date" tick={{ fontSize: 12 }} tickMargin={10} minTickGap={30} stroke="#999" />
+                  <YAxis tick={{ fontSize: 12 }} stroke="#999" width={60} tickFormatter={(v) => `${v} TND`} />
+                  <Tooltip formatter={(value) => [`${value.toFixed(3)} TND`, "Revenu"]} />
+                  <Line type="monotone" dataKey="revenue" stroke="var(--accent)" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Top Produits */}
+          <div className="panel" style={{ padding: 24, display: "flex", flexDirection: "column" }}>
+            <h3 style={{ marginTop: 0, marginBottom: 20 }}>Top 5 Produits (Vendus)</h3>
+            {stats.topProducts.length === 0 ? (
+              <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)" }}>
+                Aucune vente enregistrée.
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 15 }}>
+                {stats.topProducts.map((p, index) => (
+                  <div key={p._id} style={{ display: "flex", alignItems: "center", gap: 15, paddingBottom: 15, borderBottom: index < stats.topProducts.length - 1 ? "1px solid var(--line)" : "none" }}>
+                    <div style={{ width: 30, height: 30, borderRadius: "50%", background: "var(--accent)", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", fontSize: 14 }}>
+                      {index + 1}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 700, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 150 }}>{p.title}</div>
+                      <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>{p.sales} unités</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Cards Grid */}
       <div
