@@ -26,7 +26,7 @@ export default function CategoryPage() {
 
   const cat = categories.find((c) => c.slug === slug);
 
-  const onAdd = (p) =>
+  const onAdd = (p, qty) =>
     dispatch(
       addToCart({
         id: p._id,
@@ -34,6 +34,7 @@ export default function CategoryPage() {
         price: p.price,
         image: p.image,
         slug: p.slug,
+        qty: qty || 1
       })
     );
 

@@ -79,6 +79,8 @@ exports.update = async (req, res, next) => {
 
     if (req.file) {
       update.image = req.file.path;
+    } else if (req.body.image) {
+      update.image = req.body.image;
     }
 
     const category = await Category.findByIdAndUpdate(id, update, { new: true });

@@ -1,9 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
 import api from "../../JS/api/axios";
+import { useDispatch } from "react-redux";
+import { fetchCategories } from "../../JS/redux/slices/categorySlice";
 import ConfirmModal from "../../Components/ConfirmModal";
 import { toast } from "react-toastify";
 
 export default function ProductFormModal({ initial, categories = [], onClose, onSaved }) {
+  const dispatch = useDispatch();
   const isEdit = !!initial?._id;
 
   const [title, setTitle] = useState(initial?.title || "");
@@ -76,6 +79,23 @@ export default function ProductFormModal({ initial, categories = [], onClose, on
       toast.error(`❌ ${errMsg}`);
     } finally {
       setAiGenerating(false);
+    }
+  };
+
+  const setAsCategoryImage = async (imgUrl) => {
+    if (!category) return toast.error("Veuillez d'abord sélectionner une catégorie.");
+    if (!window.confirm("Voulez-vous définir cette image comme image de la catégorie ?")) return;
+
+    try {
+      setLoading(true);
+      await api.put(`/categories/${category}`, { image: imgUrl });
+      toast.success("✨ Image de catégorie mise à jour !");
+      dispatch(fetchCategories()); // ✅ Rafraîchir les catégories pour voir le changement sur la home
+    } catch (err) {
+      console.error(err);
+      toast.error("❌ Erreur lors de la mise à jour de la catégorie");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -223,6 +243,30 @@ export default function ProductFormModal({ initial, categories = [], onClose, on
                   style={{
                     position: "absolute",
                     top: 10,
+                    right: 170,
+                    background: "rgba(255, 255, 255, 0.9)",
+                    color: "var(--accent)",
+                    border: "1px solid var(--accent)",
+                    borderRadius: "12px",
+                    padding: "8px 12px",
+                    fontSize: "12px",
+                    fontWeight: "900",
+                    cursor: "pointer",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "5px",
+                    transition: "all 0.2s"
+                  }}
+                  onClick={() => setAsCategoryImage(preview)}
+                >
+                  📁 Photo Catégorie
+                </button>
+                <button
+                  type="button"
+                  style={{
+                    position: "absolute",
+                    top: 10,
                     right: 10,
                     background: "rgba(255, 255, 255, 0.9)",
                     color: "#ef4444",
@@ -254,7 +298,7 @@ export default function ProductFormModal({ initial, categories = [], onClose, on
                     if (fileInput) fileInput.value = "";
                   }}
                 >
-                  🗑️ Retirer l'image principale
+                  🗑️ Retirer
                 </button>
               </div>
             )}
@@ -287,6 +331,18 @@ export default function ProductFormModal({ initial, categories = [], onClose, on
                 {existingImages.map((img, idx) => (
                   <div key={idx} style={{ position: "relative" }}>
                     <img src={img} alt="existing" style={{ width: 80, height: 80, objectFit: "cover", borderRadius: 8 }} />
+                    <button
+                      type="button"
+                      onClick={() => setAsCategoryImage(img)}
+                      style={{
+                        position: "absolute", top: -5, right: 18, background: "var(--accent)", color: "white",
+                        border: "none", borderRadius: "50%", width: 20, height: 20, cursor: "pointer",
+                        fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center"
+                      }}
+                      title="Utiliser pour la catégorie"
+                    >
+                      📁
+                    </button>
                     <button
                       type="button"
                       onClick={() => setExistingImages(existingImages.filter((_, i) => i !== idx))}

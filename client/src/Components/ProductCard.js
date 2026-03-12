@@ -52,6 +52,22 @@ export default function ProductCard({ p, onAdd }) {
       </Link>
 
       <div className="cardBody">
+        {p?.category && (
+          <div style={{ 
+            fontSize: "10px", 
+            fontWeight: "900", 
+            color: "#fff", 
+            backgroundColor: "#c79b5b", 
+            padding: "2px 8px", 
+            borderRadius: "4px", 
+            display: "inline-block", 
+            textTransform: "uppercase", 
+            letterSpacing: "0.5px", 
+            marginBottom: "6px" 
+          }}>
+            {p.category.name || "Catégorie"}
+          </div>
+        )}
         <Link to={`/products/${p?.slug}`} className="cardTitle" style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>
           {p?.title}
         </Link>

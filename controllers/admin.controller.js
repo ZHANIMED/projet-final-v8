@@ -33,14 +33,20 @@ exports.getDashboardStats = async (req, res) => {
         const topProductsGroups = await Order.aggregate([
             { $match: { status: { $ne: "Annulée" } } },
             { $unwind: "$items" },
-            { $group: { _id: "$items.id", title: { $first: "$items.title" }, totalSold: { $sum: "$items.qty" } } },
+            { 
+                $group: { 
+                    _id: "$items.product", 
+                    title: { $first: "$items.title" }, 
+                    totalSold: { $sum: "$items.qty" } 
+                } 
+            },
             { $sort: { totalSold: -1 } },
             { $limit: 5 }
         ]);
 
         const topProducts = topProductsGroups.map(p => ({
-            _id: p._id,
-            title: p.title,
+            _id: p._id || "unknown",
+            title: p.title || "Produit sans nom",
             sales: p.totalSold
         }));
 

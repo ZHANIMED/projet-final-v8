@@ -25,6 +25,10 @@ export default function Home() {
     api.get("/settings").then(({ data }) => setSettings(data)).catch(() => { });
   }, [dispatch]);
 
+  const handleAddToCart = (p, qty) => {
+    dispatch({ type: "cart/addToCart", payload: { ...p, id: p._id, qty } });
+  };
+
   const handleSubscribe = async (e) => {
     e.preventDefault();
     if (!email) return;
@@ -65,7 +69,7 @@ export default function Home() {
           <p className="sectionSub">Nos coups de cœur du moment ✨</p>
           <div className="grid4">
             {featuredProducts.map((p) => (
-              <ProductCard key={p._id} p={p} />
+              <ProductCard key={p._id} p={p} onAdd={handleAddToCart} />
             ))}
           </div>
         </div>

@@ -12,7 +12,13 @@ export default function CategoryCard({ c }) {
 
   return (
     <Link to={`/categories/${c.slug}`} className="catCard">
-      {hasProducts && productImages.length > 0 ? (
+      {c.image ? (
+        <img
+          src={c.image}
+          alt={c.name}
+          style={{ width: "100%", height: "240px", objectFit: "contain", backgroundColor: "#f7f7f5" }}
+        />
+      ) : hasProducts && productImages.length > 0 ? (
         // Afficher les photos des produits superposées en cascade
         <div
           style={{
@@ -70,9 +76,9 @@ export default function CategoryCard({ c }) {
           })}
         </div>
       ) : (
-        // Sinon, afficher l'image de la catégorie comme avant
+        // Sinon, afficher un placeholder
         <img
-          src={c.image || "https://via.placeholder.com/600x400"}
+          src="https://via.placeholder.com/600x400"
           alt={c.name}
         />
       )}

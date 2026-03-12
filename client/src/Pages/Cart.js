@@ -41,7 +41,7 @@ export default function Cart() {
   };
 
   const handleCheckout = async () => {
-    if (!user?._id) {
+    if (!user?.id) {
       toast.info("Veuillez vous connecter pour valider votre commande.", { autoClose: 4000 });
       navigate("/login");
       return;

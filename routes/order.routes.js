@@ -194,7 +194,7 @@ router.get("/stats/sales", isAuth, isAdmin, async (req, res, next) => {
             { $unwind: "$items" },
             {
                 $group: {
-                    _id: "$items.product",
+                    _id: "$items.title",
                     title: { $first: "$items.title" },
                     totalSold: { $sum: "$items.qty" },
                     revenue: { $sum: { $multiply: ["$items.qty", "$items.price"] } }

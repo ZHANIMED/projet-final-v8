@@ -65,7 +65,7 @@ const cartSlice = createSlice({
 
     removeFromCart(state, action) {
       state.items = state.items.filter((x) => x.id !== action.payload);
-      save(state.items);
+      save(state);
     },
 
     changeQty(state, action) {
